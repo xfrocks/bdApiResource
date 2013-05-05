@@ -10,8 +10,8 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
 			return $this->responseReroute(__CLASS__, 'get-single');
 		}
 
-		$resourceCategoryID = $this->_input->filterSingle('resource_category_id', XenForo_Input::UINT);
-		if (empty($resourceCategoryID))
+		$resourceCategoryId = $this->_input->filterSingle('resource_category_id', XenForo_Input::UINT);
+		if (empty($resourceCategoryId))
 		{
 			return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_requires_resource_category_id'), 400);
 		}
@@ -20,7 +20,9 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
 
 		$resourceModel = $this->_getResourceModel();
 
-		$pageNavParams = array();
+		$pageNavParams = array(
+				'resource_category_id' => $resourceCategoryId,
+		);
 		$page = $this->_input->filterSingle('page', XenForo_Input::UINT);
 		$limit = XenForo_Application::get('options')->discussionsPerPage;
 
