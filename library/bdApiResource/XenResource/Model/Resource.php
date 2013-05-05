@@ -34,6 +34,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 				'price'				=> 'resource_price',
 				'currency'			=> 'resource_currency',
 				'resource_date'		=> 'resource_create_date',
+				'last_update'		=> 'resource_update_date',
 				'download_count'	=> 'resource_download_count',
 				'rating'			=> 'resource_rating', // XenResource_Model_Resource::prepareResource
 				'rating_count'		=> 'resource_rating_count',

@@ -41,6 +41,51 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
 				'page' => $page,
 		);
 
+		$order = $this->_input->filterSingle('order', XenForo_Input::STRING, array('default' => 'natural'));
+		switch ($order)
+		{
+			case 'resource_create_date':
+				$fetchOptions['order'] = 'resource_date';
+				$fetchOptions['direction'] = 'asc';
+				$pageNavParams['order'] = $order;
+				break;
+			case 'resource_create_date_reverse':
+				$fetchOptions['order'] = 'resource_date';
+				$fetchOptions['direction'] = 'desc';
+				$pageNavParams['order'] = $order;
+				break;
+			case 'resource_update_date':
+				$fetchOptions['order'] = 'last_update';
+				$fetchOptions['direction'] = 'asc';
+				$pageNavParams['order'] = $order;
+				break;
+			case 'resource_update_date_reverse':
+				$fetchOptions['order'] = 'last_update';
+				$fetchOptions['direction'] = 'desc';
+				$pageNavParams['order'] = $order;
+				break;
+			case 'resource_download_count':
+				$fetchOptions['order'] = 'download_count';
+				$fetchOptions['direction'] = 'asc';
+				$pageNavParams['order'] = $order;
+				break;
+			case 'resource_download_count_reverse':
+				$fetchOptions['order'] = 'download_count';
+				$fetchOptions['direction'] = 'desc';
+				$pageNavParams['order'] = $order;
+				break;
+			case 'resource_rating_weighted':
+				$fetchOptions['order'] = 'rating_weighted';
+				$fetchOptions['direction'] = 'asc';
+				$pageNavParams['order'] = $order;
+				break;
+			case 'resource_rating_weighted_reverse':
+				$fetchOptions['order'] = 'rating_weighted';
+				$fetchOptions['direction'] = 'desc';
+				$pageNavParams['order'] = $order;
+				break;
+		}
+
 		$resources = $resourceModel->getResources(
 				$conditions,
 				$resourceModel->getFetchOptionsToPrepareApiData($fetchOptions)
