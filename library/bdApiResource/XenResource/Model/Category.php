@@ -27,10 +27,10 @@ class bdApiResource_XenResource_Model_Category extends XFCP_bdApiResource_XenRes
 				'resource_count'			=> 'category_resource_count',
 		);
 
-		$data = bdApi_Data_Helper_Core::filter($category, $publicKeys);
-
 		if (XenForo_Application::isRegistered('_Appforo_fc'))
 		{
+			$data = Appforo_Data_Helper_Core::filter($category, $publicKeys);
+			
 			$data['links'] = array(
 					'permalink' => Appforo_Link::buildPublicLink('resources/categories', $category),
 					'detail' => Appforo_Link::buildAppforoLink('resource-categories', $category),
@@ -41,6 +41,8 @@ class bdApiResource_XenResource_Model_Category extends XFCP_bdApiResource_XenRes
 		}
 		else
 		{
+			$data = bdApi_Data_Helper_Core::filter($category, $publicKeys);
+			
 			$data['links'] = array(
 					'permalink' => bdApi_Link::buildPublicLink('resources/categories', $category),
 					'detail' => bdApi_Link::buildApiLink('resource-categories', $category),

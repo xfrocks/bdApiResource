@@ -43,8 +43,6 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 				'rating_weighted'	=> 'resource_rating_weighted',
 		);
 
-		$data = bdApi_Data_Helper_Core::filter($resource, $publicKeys);
-
 		if (isset($resource['resource_state']))
 		{
 			switch ($resource['resource_state'])
@@ -66,6 +64,8 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 
 		if (XenForo_Application::isRegistered('_Appforo_fc'))
 		{
+			$data = Appforo_Data_Helper_Core::filter($resource, $publicKeys);
+
 			$data['links'] = array(
 					'permalink' => Appforo_Link::buildPublicLink('resources', $resource),
 					'detail' => Appforo_Link::buildAppforoLink('resources', $resource),
@@ -74,6 +74,8 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 		}
 		else
 		{
+			$data = bdApi_Data_Helper_Core::filter($resource, $publicKeys);
+
 			$data['links'] = array(
 					'permalink' => bdApi_Link::buildPublicLink('resources', $resource),
 					'detail' => bdApi_Link::buildApiLink('resources', $resource),
