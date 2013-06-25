@@ -20,4 +20,10 @@ class bdApiResource_Listener
 		bdApi_Route_PrefixApi::addRoute($routes, 'resources', 'bdApiResource_Route_PrefixApi_Resources', 'data_only');
 		bdApi_Route_PrefixApi::addRoute($routes, 'resource-categories', 'bdApiResource_Route_PrefixApi_Categories', 'data_only');
 	}
+	
+	public static function appforo_setup_routes(array &$routes)
+	{
+		Appforo_Route_PrefixAppforo::addRoute($routes, 'resources', 'bdApiResource_Route_PrefixAppforo_Resources', 'data_only');
+		Appforo_Route_PrefixAppforo::addRoute($routes, 'resource-categories', 'bdApiResource_Route_PrefixAppforo_Categories', 'data_only');
+	}
 }

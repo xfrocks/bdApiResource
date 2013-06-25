@@ -1,11 +1,11 @@
 <?php
 
-class bdApiResource_Route_PrefixApi_Resources extends bdApi_Route_PrefixApi_Abstract
+class bdApiResource_Route_PrefixAppforo_Resources extends Appforo_Route_PrefixAppforo_Abstract
 {
 	public function match($routePath, Zend_Controller_Request_Http $request, XenForo_Router $router)
 	{
 		$action = $router->resolveActionWithIntegerParam($routePath, $request, 'resource_id');
-		return $router->getRouteMatch('bdApiResource_ControllerApi_Resource', $action);
+		return $router->getRouteMatch('bdApiResource_ControllerAppforo_Resource', $action);
 	}
 
 	public function buildLink($originalPrefix, $outputPrefix, $action, $extension, $data, array &$extraParams)

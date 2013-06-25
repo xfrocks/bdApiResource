@@ -1,20 +1,20 @@
 <?php
 
-class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
+class bdApiResource_ControllerAppforo_Category extends Appforo_ControllerAppforo_Abstract
 {
 	public function actionGetIndex()
 	{
-		/* @var $helper bdApiResource_ControllerHelper_Resource */
-		$helper = $this->getHelper('bdApiResource_ControllerHelper_Resource');
-
+		/* @var $helper bdApiResource_ControllerHelper_Category */
+		$helper = $this->getHelper('bdApiResource_ControllerHelper_Category');
+		
 		return $helper->actionGetIndex(__CLASS__);
 	}
 
 	public function actionGetSingle()
 	{
-		/* @var $helper bdApiResource_ControllerHelper_Resource */
-		$helper = $this->getHelper('bdApiResource_ControllerHelper_Resource');
-
+		/* @var $helper bdApiResource_ControllerHelper_Category */
+		$helper = $this->getHelper('bdApiResource_ControllerHelper_Category');
+		
 		return $helper->actionGetSingle();
 	}
 	
