@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<addon addon_id="bdApiResource" title="[bd] API for XenForo Resource" version_string="0.9.2" version_id="4" url="" install_callback_class="" install_callback_method="" uninstall_callback_class="" uninstall_callback_method="">
+<addon addon_id="bdApiResource" title="[bd] API for XenForo Resource" version_string="0.9.3" version_id="5" url="" install_callback_class="" install_callback_method="" uninstall_callback_class="" uninstall_callback_method="">
   <admin_navigation/>
   <admin_permissions/>
   <admin_style_properties/>
   <admin_templates/>
+  <admin_template_modifications/>
   <code_events/>
   <code_event_listeners>
-    <listener event_id="appforo_setup_routes" execute_order="10" callback_class="bdApiResource_Listener" callback_method="appforo_setup_routes" active="1" description=""/>
-    <listener event_id="bdapi_setup_routes" execute_order="5" callback_class="bdApiResource_Listener" callback_method="bdapi_setup_routes" active="1" description=""/>
-    <listener event_id="load_class_controller" execute_order="5" callback_class="bdApiResource_Listener" callback_method="load_class" active="1" description=""/>
-    <listener event_id="load_class_model" execute_order="5" callback_class="bdApiResource_Listener" callback_method="load_class" active="1" description=""/>
+    <listener event_id="appforo_setup_routes" execute_order="10" callback_class="bdApiResource_Listener" callback_method="appforo_setup_routes" active="1" hint="" description=""/>
+    <listener event_id="bdapi_setup_routes" execute_order="5" callback_class="bdApiResource_Listener" callback_method="bdapi_setup_routes" active="1" hint="" description=""/>
+    <listener event_id="load_class_controller" execute_order="5" callback_class="bdApiResource_Listener" callback_method="load_class" active="1" hint="" description=""/>
+    <listener event_id="load_class_model" execute_order="5" callback_class="bdApiResource_Listener" callback_method="load_class" active="1" hint="" description=""/>
   </code_event_listeners>
   <cron/>
   <email_templates/>
+  <email_template_modifications/>
   <optiongroups/>
   <permissions>
     <permission_groups/>
@@ -25,5 +27,6 @@
   <route_prefixes/>
   <style_properties/>
   <templates/>
+  <public_template_modifications/>
   <bb_code_media_sites/>
 </addon>
