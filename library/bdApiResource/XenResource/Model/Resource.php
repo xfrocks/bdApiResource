@@ -24,23 +24,23 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 		$resource = $this->prepareResource($resource, $category);
 
 		$publicKeys = array(
-				// xf_resource
-				'resource_id'		=> 'resource_id',
-				'resource_category_id' => 'resource_category_id',
-				'title'				=> 'resource_title',
-				'tag_lie'			=> 'resource_description',
-				'user_id'			=> 'creator_user_id',
-				'username'			=> 'creator_username',
-				'price'				=> 'resource_price',
-				'currency'			=> 'resource_currency',
-				'resource_date'		=> 'resource_create_date',
-				'last_update'		=> 'resource_update_date',
-				'download_count'	=> 'resource_download_count',
-				'rating'			=> 'resource_rating', // XenResource_Model_Resource::prepareResource
-				'rating_count'		=> 'resource_rating_count',
-				'rating_sum'		=> 'resource_rating_sum',
-				'rating_avg'		=> 'resource_rating_avg',
-				'rating_weighted'	=> 'resource_rating_weighted',
+			// xf_resource
+			'resource_id' => 'resource_id',
+			'resource_category_id' => 'resource_category_id',
+			'title' => 'resource_title',
+			'tag_lie' => 'resource_description',
+			'user_id' => 'creator_user_id',
+			'username' => 'creator_username',
+			'price' => 'resource_price',
+			'currency' => 'resource_currency',
+			'resource_date' => 'resource_create_date',
+			'last_update' => 'resource_update_date',
+			'download_count' => 'resource_download_count',
+			'rating' => 'resource_rating', // XenResource_Model_Resource::prepareResource
+			'rating_count' => 'resource_rating_count',
+			'rating_sum' => 'resource_rating_sum',
+			'rating_avg' => 'resource_rating_avg',
+			'rating_weighted' => 'resource_rating_weighted',
 		);
 
 		if (isset($resource['resource_state']))
@@ -67,9 +67,9 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 			$data = Appforo_Data_Helper_Core::filter($resource, $publicKeys);
 
 			$data['links'] = array(
-					'permalink' => Appforo_Link::buildPublicLink('resources', $resource),
-					'detail' => Appforo_Link::buildAppforoLink('resources', $resource),
-					'category' => Appforo_Link::buildAppforoLink('resource-categories', $resource),
+				'permalink' => Appforo_Link::buildPublicLink('resources', $resource),
+				'detail' => Appforo_Link::buildAppforoLink('resources', $resource),
+				'category' => Appforo_Link::buildAppforoLink('resource-categories', $resource),
 			);
 		}
 		else
@@ -77,9 +77,9 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 			$data = bdApi_Data_Helper_Core::filter($resource, $publicKeys);
 
 			$data['links'] = array(
-					'permalink' => bdApi_Link::buildPublicLink('resources', $resource),
-					'detail' => bdApi_Link::buildApiLink('resources', $resource),
-					'category' => bdApi_Link::buildApiLink('resource-categories', $resource),
+				'permalink' => bdApi_Link::buildPublicLink('resources', $resource),
+				'detail' => bdApi_Link::buildApiLink('resources', $resource),
+				'category' => bdApi_Link::buildApiLink('resource-categories', $resource),
 			);
 		}
 
@@ -97,15 +97,11 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 			{
 				if (XenForo_Application::isRegistered('_Appforo_fc'))
 				{
-					$data['links']['content'] = Appforo_Link::buildPublicLink('resources/download', $resource, array(
-							'version' => $resource['current_version_id'],
-					));
+					$data['links']['content'] = Appforo_Link::buildPublicLink('resources/download', $resource, array('version' => $resource['current_version_id'], ));
 				}
 				else
 				{
-					$data['links']['content'] = bdApi_Link::buildPublicLink('resources/download', $resource, array(
-							'version' => $resource['current_version_id'],
-					));
+					$data['links']['content'] = bdApi_Link::buildPublicLink('resources/download', $resource, array('version' => $resource['current_version_id'], ));
 				}
 			}
 		}
@@ -122,13 +118,29 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 			}
 		}
 
+		if (is_callable(array(
+			'XenResource_ViewPublic_Helper_Resource',
+			'getResourceIconUrl'
+		)))
+		{
+			if (XenForo_Application::isRegistered('_Appforo_fc'))
+			{
+				$data['links']['icon'] = Appforo_Link::convertUriToAbsoluteUri(XenResource_ViewPublic_Helper_Resource::getResourceIconUrl($resource), true);
+			}
+			else
+			{
+				$data['links']['icon'] = bdApi_Link::convertUriToAbsoluteUri(XenResource_ViewPublic_Helper_Resource::getResourceIconUrl($resource), true);
+			}
+		}
+
 		$data['permissions'] = array(
-				'download'			=> $resource['canDownload'],
-				'edit'				=> $resource['canEdit'],
-				'delete'			=> $resource['canDelete'],
-				'rate'				=> $resource['canRate'],
+			'download' => $resource['canDownload'],
+			'edit' => $resource['canEdit'],
+			'delete' => $resource['canDelete'],
+			'rate' => $resource['canRate'],
 		);
 
 		return $data;
 	}
+
 }

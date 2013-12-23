@@ -104,10 +104,11 @@ class bdApiResource_ControllerHelper_Resource extends XenForo_ControllerHelper_A
 		{
 			if ($this->_controller instanceof bdApi_ControllerApi_Abstract)
 			{
-				bdApi_Data_Helper_Core::addPageLinks($data, $limit, $total, $page, 'resources', array(), $pageNavParams);
+				bdApi_Data_Helper_Core::addPageLinks($this->_controller->getInput(), $data, $limit, $total, $page, 'resources', array(), $pageNavParams);
 			}
 		}
-		elseif (class_exists('Appforo_ControllerAppforo_Abstract'))
+		
+		if (class_exists('Appforo_ControllerAppforo_Abstract'))
 		{
 			if ($this->_controller instanceof Appforo_ControllerAppforo_Abstract)
 			{
