@@ -7,8 +7,7 @@
   <admin_template_modifications/>
   <code_events/>
   <code_event_listeners>
-    <listener event_id="appforo_setup_routes" execute_order="10" callback_class="bdApiResource_Listener" callback_method="appforo_setup_routes" active="1" hint="" description=""/>
-    <listener event_id="bdapi_setup_routes" execute_order="5" callback_class="bdApiResource_Listener" callback_method="bdapi_setup_routes" active="1" hint="" description=""/>
+    <listener event_id="api_setup_routes" execute_order="5" callback_class="bdApiResource_Listener" callback_method="bdapi_setup_routes" active="1" hint="" description=""/>
     <listener event_id="load_class_controller" execute_order="5" callback_class="bdApiResource_Listener" callback_method="load_class" active="1" hint="" description=""/>
     <listener event_id="load_class_model" execute_order="5" callback_class="bdApiResource_Listener" callback_method="load_class" active="1" hint="" description=""/>
   </code_event_listeners>
@@ -29,4 +28,5 @@
   <templates/>
   <public_template_modifications/>
   <bb_code_media_sites/>
+  <bb_codes/>
 </addon>

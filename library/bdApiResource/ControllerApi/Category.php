@@ -2,29 +2,43 @@
 
 class bdApiResource_ControllerApi_Category extends bdApi_ControllerApi_Abstract
 {
-	public function actionGetIndex()
-	{
-		/* @var $helper bdApiResource_ControllerHelper_Category */
-		$helper = $this->getHelper('bdApiResource_ControllerHelper_Category');
+    public function actionGetIndex()
+    {
+        $resourceCategoryId = $this->_input->filterSingle('resource_category_id', XenForo_Input::UINT);
+        if (!empty($resourceCategoryId)) {
+            return $this->responseReroute(__CLASS__, 'get-single');
+        }
 
-		return $helper->actionGetIndex(__CLASS__);
-	}
+        $categories = $this->_getCategoryModel()->getViewableCategories();
+        $data = $this->_getCategoryModel()->prepareApiDataForCategories($categories);
 
-	public function actionGetSingle()
-	{
-		/* @var $helper bdApiResource_ControllerHelper_Category */
-		$helper = $this->getHelper('bdApiResource_ControllerHelper_Category');
+        $data = array(
+            'categories' => $this->_filterDataMany($data),
+        );
 
-		return $helper->actionGetSingle();
-	}
+        return $this->responseData('bdApiResource_ViewApi_Category_List', $data);
+    }
 
-	public function bdApiResource_filterDataMany(array $resourcesData)
-	{
-		return $this->_filterDataMany($resourcesData);
-	}
-	
-	public function bdApiResource_filterDataSingle(array $resourceData, array $prefixes = array())
-	{
-		return $this->_filterDataSingle($resourceData, $prefixes);
-	}
+    public function actionGetSingle()
+    {
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+
+        $resourceCategoryId = $this->_input->filterSingle('resource_category_id', XenForo_Input::UINT);
+        $category = $resourceHelper->assertCategoryValidAndViewable($resourceCategoryId);
+
+        $data = array(
+            'category' => $this->_filterDataSingle($this->_getCategoryModel()->prepareApiDataForCategory($category)),
+        );
+
+        return $this->responseData('bdApi_ViewApi_Category_Single', $data);
+    }
+
+    /**
+     * @return bdApiResource_XenResource_Model_Category
+     */
+    protected function _getCategoryModel()
+    {
+        return $this->getModelFromCache('XenResource_Model_Category');
+    }
 }
