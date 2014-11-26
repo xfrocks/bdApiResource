@@ -38,7 +38,25 @@ class bdApiResource_XenResource_Model_Category extends XFCP_bdApiResource_XenRes
 
         $data['permissions'] = array(
             'add' => $category['canAdd'],
+
+            'add_file' => !empty($category['allow_local']),
+            'add_url' => (!empty($category['allow_external']) || !empty($category['allow_commercial_external'])),
+            'add_price' => !empty($category['allow_commercial_external']),
+            'add_fileless' => !empty($category['allow_fileless']),
         );
+
+        if (!empty($category['fieldCache'])) {
+            $data['resource_custom_fields'] = array();
+            foreach ($category['fieldCache'] as $position => $positionFields) {
+                foreach ($positionFields as $field) {
+                    $data['resource_custom_fields'][$field] = array(
+                        'name' => $field,
+                    );
+
+                    // TODO: field configuration?
+                }
+            }
+        }
 
         return $data;
     }

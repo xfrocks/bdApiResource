@@ -9,6 +9,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
         }
 
         $fetchOptions['join'] |= XenResource_Model_Resource::FETCH_DESCRIPTION;
+        $fetchOptions['join'] |= XenResource_Model_Resource::FETCH_VERSION;
 
         return $fetchOptions;
     }
@@ -40,10 +41,9 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'resource_category_id' => 'resource_category_id',
             'title' => 'resource_title',
             'tag_line' => 'resource_description',
+            'version_string' => 'resource_version',
             'user_id' => 'creator_user_id',
             'username' => 'creator_username',
-            'price' => 'resource_price',
-            'currency' => 'resource_currency',
             'resource_date' => 'resource_create_date',
             'last_update' => 'resource_update_date',
             'download_count' => 'resource_download_count',
@@ -83,25 +83,29 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'category' => XenForo_Link::buildApiLink('resource-categories', $resource),
         );
 
-        if (!$resource['is_fileless']) {
-            if (!empty($resource['external_url'])) {
-                $data['links']['content'] = $resource['external_url'];
-            } elseif (!empty($resource['external_purchase_url'])) {
+        if (!empty($resource['is_fileless'])) {
+            if (!empty($resource['external_purchase_url'])) {
                 $data['links']['content'] = $resource['external_purchase_url'];
+                $data['resource_price'] = $resource['price'];
+                $data['resource_currency'] = $resource['currency'];
+            }
+        } else {
+            if (!empty($resource['download_url'])) {
+                $data['links']['content'] = $resource['download_url'];
             } else {
-                    $data['links']['content'] = XenForo_Link::buildPublicLink('resources/download', $resource, array('version' => $resource['current_version_id'],));
+                $data['links']['content'] = XenForo_Link::buildPublicLink('resources/download', $resource, array('version' => $resource['current_version_id'],));
             }
         }
 
         if (!empty($resource['discussion_thread_id'])) {
-                $data['links']['thread'] = XenForo_Link::buildApiLink('threads', array('thread_id' => $resource['discussion_thread_id']));
+            $data['links']['thread'] = XenForo_Link::buildApiLink('threads', array('thread_id' => $resource['discussion_thread_id']));
         }
 
         if (is_callable(array(
             'XenResource_ViewPublic_Helper_Resource',
             'getResourceIconUrl'
         ))) {
-                $data['links']['icon'] = XenForo_Link::convertUriToAbsoluteUri(XenResource_ViewPublic_Helper_Resource::getResourceIconUrl($resource), true);
+            $data['links']['icon'] = XenForo_Link::convertUriToAbsoluteUri(XenResource_ViewPublic_Helper_Resource::getResourceIconUrl($resource), true);
         }
 
         $data['permissions'] = array(
