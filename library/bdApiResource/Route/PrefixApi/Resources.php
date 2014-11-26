@@ -1,6 +1,6 @@
 <?php
 
-class bdApiResource_Route_PrefixApi_Resources extends bdApi_Route_PrefixApi_Abstract
+class bdApiResource_Route_PrefixApi_Resources implements XenForo_Route_Interface
 {
     public function match($routePath, Zend_Controller_Request_Http $request, XenForo_Router $router)
     {
