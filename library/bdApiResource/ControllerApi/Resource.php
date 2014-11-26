@@ -225,6 +225,9 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         }
         $versionDw->set('version_string', $dataInput['resource_version']);
 
+        $fieldValues = $this->_input->filterSingle('resource_custom_fields', XenForo_Input::ARRAY_SIMPLE);
+        $dw->setCustomFields($fieldValues);
+
         $dw->bdApiResource_onControllerSave($category, $visitor);
 
         $dw->preSave();

@@ -27,7 +27,10 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 
     public function prepareApiDataForResource(array $resource, array $category)
     {
-        $resource = $this->prepareResource($resource, $category);
+        if (!isset($resource['canDownload'])) {
+            $resource = $this->prepareResource($resource, $category);
+            $resource = $this->prepareResourceCustomFields($resource, $category);
+        }
 
         if (isset($resource['description'])) {
             $resource['message'] = $resource['description'];
@@ -52,6 +55,8 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'rating_sum' => 'resource_rating_sum',
             'rating_avg' => 'resource_rating_avg',
             'rating_weighted' => 'resource_rating_weighted',
+
+            'customFields' => 'resource_custom_fields', // XenResource_Model_Resource::prepareResourceCustomFields
 
             // message
             'message' => 'resource_text',
