@@ -6,14 +6,16 @@ class bdApiResource_XenResource_Model_Category extends XFCP_bdApiResource_XenRes
     {
         $data = array();
 
+        $fields = $this->_bdApiResource_getFieldModel()->getResourceFields();
+
         foreach ($categories as $key => $category) {
-            $data[] = $this->prepareApiDataForCategory($category);
+            $data[] = $this->prepareApiDataForCategory($category, $fields);
         }
 
         return $data;
     }
 
-    public function prepareApiDataForCategory(array $category)
+    public function prepareApiDataForCategory(array $category, array $fields = null)
     {
         $category = $this->prepareCategory($category);
 
@@ -46,18 +48,31 @@ class bdApiResource_XenResource_Model_Category extends XFCP_bdApiResource_XenRes
         );
 
         if (!empty($category['fieldCache'])) {
+            if ($fields === null) {
+                $fields = $this->_bdApiResource_getFieldModel()->getResourceFields();
+            }
+
             $data['resource_custom_fields'] = array();
             foreach ($category['fieldCache'] as $position => $positionFields) {
-                foreach ($positionFields as $field) {
-                    $data['resource_custom_fields'][$field] = array(
-                        'name' => $field,
-                    );
+                foreach ($positionFields as $fieldId) {
+                    if (isset($fields[$fieldId])) {
+                        $field = $fields[$fieldId];
+                        $fieldData = $this->_bdApiResource_getFieldModel()->prepareApiDataForField($field);
 
-                    // TODO: field configuration?
+                        $data['resource_custom_fields'][$fieldId] = $fieldData;
+                    }
                 }
             }
         }
 
         return $data;
+    }
+
+    /**
+     * @return bdApiResource_XenResource_Model_ResourceField
+     */
+    protected function _bdApiResource_getFieldModel()
+    {
+        return $this->getModelFromCache('XenResource_Model_ResourceField');
     }
 }

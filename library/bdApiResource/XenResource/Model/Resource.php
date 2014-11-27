@@ -18,14 +18,16 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
     {
         $data = array();
 
+        $fields = $this->_bdApiResource_getFieldModel()->getResourceFields();
+
         foreach ($resources as $key => $resource) {
-            $data[] = $this->prepareApiDataForResource($resource, $category);
+            $data[] = $this->prepareApiDataForResource($resource, $category, $fields);
         }
 
         return $data;
     }
 
-    public function prepareApiDataForResource(array $resource, array $category)
+    public function prepareApiDataForResource(array $resource, array $category, array $fields = null)
     {
         if (!isset($resource['canDownload'])) {
             $resource = $this->prepareResource($resource, $category);
@@ -56,8 +58,6 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'rating_avg' => 'resource_rating_avg',
             'rating_weighted' => 'resource_rating_weighted',
 
-            'customFields' => 'resource_custom_fields', // XenResource_Model_Resource::prepareResourceCustomFields
-
             // message
             'message' => 'resource_text',
             'messageHtml' => 'resource_text_html',
@@ -79,6 +79,22 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
                     $data['resource_is_published'] = false;
                     $data['resource_is_deleted'] = true;
                     break;
+            }
+        }
+
+        if (!empty($resource['customFields'])) {
+            if ($fields === null) {
+                $fields = $this->_bdApiResource_getFieldModel()->getResourceFields();
+            }
+
+            $data['resource_custom_fields'] = array();
+            foreach ($resource['customFields'] as $fieldId => $fieldValue) {
+                if (isset($fields[$fieldId])) {
+                    $field = $fields[$fieldId];
+                    $fieldData = $this->_bdApiResource_getFieldModel()->prepareApiDataForField($field, $fieldValue);
+
+                    $data['resource_custom_fields'][$fieldId] = $fieldData;
+                }
             }
         }
 
@@ -123,4 +139,11 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
         return $data;
     }
 
+    /**
+     * @return bdApiResource_XenResource_Model_ResourceField
+     */
+    protected function _bdApiResource_getFieldModel()
+    {
+        return $this->getModelFromCache('XenResource_Model_ResourceField');
+    }
 }

@@ -13,6 +13,7 @@ class bdApiResource_Listener
 
             'XenResource_Model_Category',
             'XenResource_Model_Resource',
+            'XenResource_Model_ResourceField',
         );
 
         if (in_array($class, $classes)) {
