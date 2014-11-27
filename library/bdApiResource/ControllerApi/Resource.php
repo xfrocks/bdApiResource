@@ -333,6 +333,31 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         return $this->responseReroute(__CLASS__, 'get-single');
     }
 
+    public function actionDeleteIndex()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+
+        if (!$this->_getResourceModel()->canDeleteResource($resource, $category)) {
+            return $this->responseNoPermission();
+        }
+
+        /* @var $dw bdApiResource_XenResource_DataWriter_Resource */
+        $dw = XenForo_DataWriter::create('XenResource_DataWriter_Resource');
+        $dw->setExistingData($resource, true);
+        $dw->set('resource_state', 'deleted');
+        $dw->save();
+
+        XenForo_Model_Log::logModeratorAction('resource', $resource, 'delete_soft', array(
+            'reason' => __METHOD__,
+        ));
+
+        return $this->responseMessage(new XenForo_Phrase('changes_saved'));
+    }
+
     /**
      * @return bdApiResource_XenResource_Model_Resource
      */
