@@ -22,10 +22,14 @@
     <interface_groups/>
   </permissions>
   <phrases>
+    <phrase title="bdapi_resource_slash_resources_icon_requires_upload_file" version_id="7" version_string="0.9.4b"><![CDATA[/resources/icon requires `file` upload.]]></phrase>
     <phrase title="bdapi_resource_slash_resources_requires_resource_category_id" version_id="1" version_string="0.9-dev"><![CDATA[/resources requires `resource_category_id`.]]></phrase>
+    <phrase title="bdapi_resource_slash_resources_requires_resource_currency" version_id="7" version_string="0.9.4b"><![CDATA[/resources requires `resource_currency`.]]></phrase>
     <phrase title="bdapi_resource_slash_resources_requires_resource_description" version_id="5" version_string="0.9.3"><![CDATA[/resources requires `resource_description`.]]></phrase>
+    <phrase title="bdapi_resource_slash_resources_requires_resource_price" version_id="7" version_string="0.9.4b"><![CDATA[/resources requires `resource_price`.]]></phrase>
     <phrase title="bdapi_resource_slash_resources_requires_resource_text" version_id="5" version_string="0.9.3"><![CDATA[/resources requires `resource_text`.]]></phrase>
     <phrase title="bdapi_resource_slash_resources_requires_resource_title" version_id="5" version_string="0.9.3"><![CDATA[/resources requires `resource_title`.]]></phrase>
+    <phrase title="bdapi_resource_slash_resources_requires_resource_url" version_id="7" version_string="0.9.4b"><![CDATA[/resources requires `resource_url`.]]></phrase>
   </phrases>
   <route_prefixes/>
   <style_properties/>

@@ -358,6 +358,45 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         return $this->responseMessage(new XenForo_Phrase('changes_saved'));
     }
 
+    public function actionPostIcon()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+
+        if (!$this->_getResourceModel()->canEditResource($resource, $category)) {
+            return $this->responseNoPermission();
+        }
+
+        $icon = XenForo_Upload::getUploadedFile('file');
+        if (empty($icon)) {
+            return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_icon_requires_upload_file'), 400);
+        }
+
+        $this->_getResourceModel()->uploadResourceIcon($icon, $resource['resource_id']);
+
+        return $this->responseMessage(new XenForo_Phrase('changes_saved'));
+    }
+
+    public function actionDeleteIcon()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+
+        if (!$this->_getResourceModel()->canEditResource($resource, $category)) {
+            return $this->responseNoPermission();
+        }
+
+        $this->_getResourceModel()->deleteResourceIcon($resource['resource_id']);
+
+        return $this->responseMessage(new XenForo_Phrase('changes_saved'));
+    }
+
     /**
      * @return bdApiResource_XenResource_Model_Resource
      */

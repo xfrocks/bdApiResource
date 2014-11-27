@@ -122,19 +122,20 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             $data['links']['thread'] = XenForo_Link::buildApiLink('threads', array('thread_id' => $resource['discussion_thread_id']));
         }
 
-        if (is_callable(array(
-            'XenResource_ViewPublic_Helper_Resource',
-            'getResourceIconUrl'
-        ))) {
-            $data['links']['icon'] = XenForo_Link::convertUriToAbsoluteUri(XenResource_ViewPublic_Helper_Resource::getResourceIconUrl($resource), true);
-        }
-
         $data['permissions'] = array(
             'download' => $resource['canDownload'],
             'edit' => $resource['canEdit'],
             'delete' => $resource['canDelete'],
             'rate' => $resource['canRate'],
         );
+
+        if (is_callable(array(
+            'XenResource_ViewPublic_Helper_Resource',
+            'getResourceIconUrl'
+        ))) {
+            $data['links']['icon'] = XenForo_Link::convertUriToAbsoluteUri(XenResource_ViewPublic_Helper_Resource::getResourceIconUrl($resource), true);
+            $data['permissions']['add_icon'] = $data['permissions']['edit'];
+        }
 
         return $data;
     }
