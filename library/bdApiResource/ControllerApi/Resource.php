@@ -243,6 +243,96 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         return $this->responseReroute(__CLASS__, 'get-single');
     }
 
+    public function actionPutIndex()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+
+        if (!$this->_getResourceModel()->canEditResource($resource, $category)) {
+            return $this->responseNoPermission();
+        }
+
+        $visitor = XenForo_Visitor::getInstance();
+        $input = $this->_input->filter(array(
+            'resource_title' => XenForo_Input::STRING,
+            'resource_description' => XenForo_Input::STRING,
+        ));
+        /* @var $editorHelper XenForo_ControllerHelper_Editor */
+        $editorHelper = $this->getHelper('Editor');
+        $input['resource_text'] = $editorHelper->getMessageText('resource_text', $this->_input);
+        $input['resource_text'] = XenForo_Helper_String::autoLinkBbCode($input['resource_text']);
+
+        if (empty($input['resource_title'])) {
+            return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_requires_resource_title'), 400);
+        }
+        if (empty($input['resource_description'])) {
+            return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_requires_resource_description'), 400);
+        }
+        if (empty($input['resource_text'])) {
+            return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_requires_resource_text'), 400);
+        }
+
+        /* @var $dw bdApiResource_XenResource_DataWriter_Resource */
+        $dw = XenForo_DataWriter::create('XenResource_DataWriter_Resource');
+        $dw->setExistingData($resource, true);
+
+        $dw->set('title', $input['resource_title']);
+        $dw->set('tag_line', $input['resource_description']);
+
+        $descriptionDw = $dw->getDescriptionDw();
+        $descriptionDw->set('message', $input['resource_text']);
+
+        if (!empty($resource['external_purchase_url'])) {
+            // already an external purchase
+            $versionDw = $dw->getVersionDw();
+            $dataInput = $this->_input->filter(array(
+                'resource_url' => XenForo_Input::STRING,
+                'resource_price' => XenForo_Input::UNUM,
+                'resource_currency' => XenForo_Input::STRING,
+                'resource_version' => XenForo_Input::STRING,
+            ));
+
+            if (empty($dataInput['resource_price'])) {
+                return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_requires_resource_price'), 400);
+            }
+            if (empty($dataInput['resource_currency'])) {
+                return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_requires_resource_currency'), 400);
+            }
+            if (empty($dataInput['resource_url'])) {
+                return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_requires_resource_url'), 400);
+            }
+
+            $dw->bulkSet(array(
+                'price' => $dataInput['resource_price'],
+                'currency' => $dataInput['resource_currency'],
+                'external_purchase_url' => $dataInput['resource_url']
+            ));
+            $versionDw->setOption(XenResource_DataWriter_Version::OPTION_IS_FILELESS, true);
+
+            if ($dataInput['resource_version'] === '') {
+                $dataInput['resource_version'] = XenForo_Locale::date(XenForo_Application::$time, 'Y-m-d');
+            }
+            $versionDw->set('version_string', $dataInput['resource_version']);
+        }
+
+        $fieldValues = $this->_input->filterSingle('resource_custom_fields', XenForo_Input::ARRAY_SIMPLE);
+        $dw->setCustomFields($fieldValues);
+
+        $dw->bdApiResource_onControllerSave($category, $visitor);
+
+        $dw->save();
+        $resource = $dw->getMergedData();
+
+        XenForo_Model_Log::logModeratorAction('resource', $resource, 'edit', array_merge($input, array(
+            'reason' => __METHOD__,
+        )));
+
+        return $this->responseReroute(__CLASS__, 'get-single');
+    }
+
     /**
      * @return bdApiResource_XenResource_Model_Resource
      */
