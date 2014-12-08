@@ -17,7 +17,7 @@ class bdApiResource_ControllerApi_Index extends XFCP_bdApiResource_ControllerApi
     protected function _getModules()
     {
         $modules = parent::_getModules();
-        $modules['resource'] = 2014112701;
+        $modules['resource'] = 2014120801;
 
         return $modules;
     }
