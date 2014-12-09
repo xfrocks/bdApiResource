@@ -397,6 +397,112 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         return $this->responseMessage(new XenForo_Phrase('changes_saved'));
     }
 
+    public function actionGetRatings()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+
+        $pageNavParams = array();
+        $page = $this->_input->filterSingle('page', XenForo_Input::UINT);
+        $limit = XenForo_Application::get('options')->discussionsPerPage;
+
+        $inputLimit = $this->_input->filterSingle('limit', XenForo_Input::UINT);
+        if (!empty($inputLimit)) {
+            $limit = $inputLimit;
+            $pageNavParams['limit'] = $inputLimit;
+        }
+
+        $conditions = array(
+                'resource_id' => $resource['resource_id'],
+            ) + $this->_getCategoryModel()->getPermissionBasedFetchConditions($category);
+        $fetchOptions = array(
+            'limit' => $limit,
+            'page' => $page,
+        );
+
+        $ratings = $this->_getRatingModel()->getRatings(
+            $conditions,
+            $this->_getRatingModel()->getFetchOptionsToPrepareApiData($fetchOptions)
+        );
+        $data = $this->_getRatingModel()->prepareApiDataForRatings($ratings, $resource, $category);
+
+        $total = $this->_getRatingModel()->countRatings($conditions);
+
+        $data = array(
+            'ratings' => $this->_filterDataMany($data),
+            'ratings_total' => $total,
+        );
+
+        bdApi_Data_Helper_Core::addPageLinks($this->_input, $data, $limit, $total, $page, 'resources/ratings', $resource, $pageNavParams);
+
+        return $this->responseData('bdApiResource_ViewApi_Resource_Ratings', $data);
+    }
+
+    public function actionPostRatings()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+
+        if (!$this->_getResourceModel()->canRateResource($resource, $category)) {
+            return $this->responseNoPermission();
+        }
+
+        $visitor = XenForo_Visitor::getInstance();
+        $input = $this->_input->filter(array(
+            'rating_value' => XenForo_Input::UINT,
+        ));
+        /* @var $editorHelper XenForo_ControllerHelper_Editor */
+        $editorHelper = $this->getHelper('Editor');
+        $input['rating_text'] = $editorHelper->getMessageText('rating_text', $this->_input);
+        $input['rating_text'] = XenForo_Helper_String::autoLinkBbCode($input['rating_text']);
+
+        $existing = $this->_getRatingModel()->getRatingByVersionAndUserId($resource['current_version_id'], $visitor['user_id']);
+        if ($existing && !$this->_getRatingModel()->canUpdateRating($existing, $resource, $category, $errorPhraseKey)) {
+            throw $this->getErrorOrNoPermissionResponseException($errorPhraseKey);
+        }
+
+        if (XenForo_Application::getOptions()->get('resourceReviewRequired') && empty($input['rating_text'])) {
+            return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_ratings_requires_rating_text'), 400);
+        }
+
+        /** @var XenResource_DataWriter_Rating $ratingDw */
+        $ratingDw = XenForo_DataWriter::create('XenResource_DataWriter_Rating');
+
+        $fields = $ratingDw->getFields();
+        foreach ($fields as $table => $tableFields) {
+            foreach ($tableFields as $field => $fieldConfig) {
+                if ($field == 'rating' && !empty($fieldConfig['min']) && !empty($fieldConfig['max'])) {
+                    if ($input['rating_value'] < $fieldConfig['min'] || $input['rating_value'] > $fieldConfig['max']) {
+                        return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_ratings_requires_rating_value_in_range', $fieldConfig), 400);
+                    }
+                }
+            }
+        }
+
+        $ratingDw->set('resource_version_id', $resource['current_version_id']);
+        $ratingDw->set('version_string', $resource['version_string']);
+        $ratingDw->set('resource_id', $resource['resource_id']);
+        $ratingDw->set('user_id', $visitor['user_id']);
+        $ratingDw->set('rating', $input['rating_value']);
+        $ratingDw->set('message', $input['rating_text']);
+
+        if ($existing) {
+            $deleteDw = XenForo_DataWriter::create('XenResource_DataWriter_Rating');
+            $deleteDw->setExistingData($existing, true);
+            $deleteDw->delete();
+        }
+
+        $ratingDw->save();
+
+        return $this->responseMessage(new XenForo_Phrase('changes_saved'));
+    }
+
     /**
      * @return bdApiResource_XenResource_Model_Resource
      */
@@ -411,5 +517,13 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
     protected function _getCategoryModel()
     {
         return $this->getModelFromCache('XenResource_Model_Category');
+    }
+
+    /**
+     * @return bdApiResource_XenResource_Model_Rating
+     */
+    protected function _getRatingModel()
+    {
+        return $this->getModelFromCache('XenResource_Model_Rating');
     }
 }

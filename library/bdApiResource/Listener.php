@@ -12,6 +12,7 @@ class bdApiResource_Listener
             'XenResource_DataWriter_Resource',
 
             'XenResource_Model_Category',
+            'XenResource_Model_Rating',
             'XenResource_Model_Resource',
             'XenResource_Model_ResourceField',
         );
