@@ -103,6 +103,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'detail' => XenForo_Link::buildApiLink('resources', $resource),
             'category' => XenForo_Link::buildApiLink('resource-categories', $resource),
             'ratings' => XenForo_Link::buildApiLink('resources/ratings', $resource),
+            'likes' => XenForo_Link::buildApiLink('resources/likes', $resource),
         );
 
         if (!empty($resource['is_fileless'])) {

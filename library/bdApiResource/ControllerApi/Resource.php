@@ -503,6 +503,86 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         return $this->responseMessage(new XenForo_Phrase('changes_saved'));
     }
 
+    public function actionGetLikes()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource,) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+        $update = $resourceHelper->getUpdateOrError($resource['description_update_id']);
+
+        $likes = $this->_getLikeModel()->getContentLikes('resource_update', $update['resource_update_id']);
+        $users = array();
+
+        if (!empty($likes)) {
+            foreach ($likes as $like) {
+                $users[] = array(
+                    'user_id' => $like['like_user_id'],
+                    'username' => $like['username'],
+                );
+            }
+        }
+
+        $data = array('users' => $users);
+
+        return $this->responseData('bdApiResource_ViewApi_Resource_Likes', $data);
+    }
+
+    public function actionPostLikes()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+        $update = $resourceHelper->getUpdateOrError($resource['description_update_id']);
+
+        if (!$this->_getUpdateModel()->canLikeUpdate($update, $resource, $category, $errorPhraseKey)) {
+            throw $this->getErrorOrNoPermissionResponseException($errorPhraseKey);
+        }
+
+        $likeModel = $this->_getLikeModel();
+
+        $existingLike = $likeModel->getContentLikeByLikeUser('resource_update', $update['resource_update_id'], XenForo_Visitor::getUserId());
+        if (empty($existingLike)) {
+            $latestUsers = $likeModel->likeContent('resource_update', $update['resource_update_id'], $resource['user_id']);
+
+            if ($latestUsers === false) {
+                return $this->responseNoPermission();
+            }
+        }
+
+        return $this->responseMessage(new XenForo_Phrase('changes_saved'));
+    }
+
+    public function actionDeleteLikes()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+        $update = $resourceHelper->getUpdateOrError($resource['description_update_id']);
+
+        if (!$this->_getUpdateModel()->canLikeUpdate($update, $resource, $category, $errorPhraseKey)) {
+            throw $this->getErrorOrNoPermissionResponseException($errorPhraseKey);
+        }
+
+        $likeModel = $this->_getLikeModel();
+
+        $existingLike = $likeModel->getContentLikeByLikeUser('resource_update', $update['resource_update_id'], XenForo_Visitor::getUserId());
+        if (!empty($existingLike)) {
+            $latestUsers = $likeModel->unlikeContent($existingLike);
+
+            if ($latestUsers === false) {
+                return $this->responseNoPermission();
+            }
+        }
+
+        return $this->responseMessage(new XenForo_Phrase('changes_saved'));
+    }
+
     /**
      * @return bdApiResource_XenResource_Model_Resource
      */
@@ -525,5 +605,21 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
     protected function _getRatingModel()
     {
         return $this->getModelFromCache('XenResource_Model_Rating');
+    }
+
+    /**
+     * @return XenResource_Model_Update
+     */
+    protected function _getUpdateModel()
+    {
+        return $this->getModelFromCache('XenResource_Model_Update');
+    }
+
+    /**
+     * @return XenForo_Model_Like
+     */
+    protected function _getLikeModel()
+    {
+        return $this->getModelFromCache('XenForo_Model_Like');
     }
 }
