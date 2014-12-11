@@ -38,8 +38,6 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         $fetchOptions = array(
             'limit' => $limit,
             'page' => $page,
-
-            'watchUserId' => XenForo_Visitor::getUserId(),
         );
 
         $order = $this->_input->filterSingle('order', XenForo_Input::STRING, array('default' => 'natural'));
@@ -108,9 +106,7 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
     {
         $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
 
-        $fetchOptions = $this->_getResourceModel()->getFetchOptionsToPrepareApiData(array(
-            'watchUserId' => XenForo_Visitor::getUserId(),
-        ));
+        $fetchOptions = $this->_getResourceModel()->getFetchOptionsToPrepareApiData();
 
         /** @var XenResource_ControllerHelper_Resource $resourceHelper */
         $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
@@ -587,6 +583,104 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         return $this->responseMessage(new XenForo_Phrase('changes_saved'));
     }
 
+    public function actionGetFollowed()
+    {
+        $resourceWatches = $this->_getResourceWatchModel()->getResourcesWatchedByUser(XenForo_Visitor::getUserId());
+        $resourcesData = array();
+
+        if (!empty($resourceWatches)) {
+            $resourceIds = array();
+            foreach ($resourceWatches as $resourceWatch) {
+                $resourceIds[] = $resourceWatch['resource_id'];
+            }
+
+            if (!empty($resourceIds)) {
+                $fetchOptions = $this->_getResourceModel()->getFetchOptionsToPrepareApiData(array(
+                    'join' => XenResource_Model_Resource::FETCH_CATEGORY
+                ));
+                $resources = $this->_getResourceModel()->getResourcesByIds($resourceIds, $fetchOptions);
+                $resourceFields = $this->_getResourceFieldModel()->getResourceFields();
+                foreach ($resources as $key => $resource) {
+                    $resourcesData[] = $this->_getResourceModel()->prepareApiDataForResource($resource, $resource, $resourceFields);
+                }
+            }
+        }
+
+        foreach ($resourceWatches as $resourceWatch) {
+            foreach ($resourcesData as &$resourceDataRef) {
+                if ($resourceWatch['resource_id'] == $resourceDataRef['resource_id']) {
+                    $resourceDataRef = $this->_getResourceWatchModel()->prepareApiDataForResourceWatch($resourceDataRef, $resourceWatch);
+                }
+            }
+        }
+
+        $data = array('resources' => $this->_filterDataMany($resourcesData));
+
+        return $this->responseData('bdApiResource_ViewApi_Resource_Followed', $data);
+    }
+
+    public function actionGetFollowers()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+
+        $users = array();
+
+        if ($this->_getResourceModel()->canWatchResource($resource, $category)) {
+            $visitor = XenForo_Visitor::getInstance();
+
+            $resourceWatch = $this->_getResourceWatchModel()
+                ->getUserResourceWatchByResourceId($visitor['user_id'], $resource['resource_id']);
+
+            if (!empty($resourceWatch)) {
+                $user = array(
+                    'user_id' => $visitor['user_id'],
+                    'username' => $visitor['username'],
+                );
+
+                $user = $this->_getResourceWatchModel()->prepareApiDataForResourceWatch($user, $resourceWatch);
+
+                $users[] = $user;
+            }
+        }
+
+        $data = array('users' => $this->_filterDataMany($users));
+
+        return $this->responseData('bdApiResource_ViewApi_Resource_Followers', $data);
+    }
+
+    public function actionPostFollowers()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+
+        $email = $this->_input->filterSingle('email', XenForo_Input::UINT);
+
+        if (!$this->_getResourceModel()->canWatchResource($resource, $category)) {
+            return $this->responseNoPermission();
+        }
+
+        $state = ($email > 0 ? 'watch_email' : 'watch_no_email');
+        $this->_getResourceWatchModel()->setResourceWatchState(XenForo_Visitor::getUserId(), $resource['resource_id'], $state);
+
+        return $this->responseMessage(new XenForo_Phrase('changes_saved'));
+    }
+
+    public function actionDeleteFollowers()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        $this->_getResourceWatchModel()->setResourceWatchState(XenForo_Visitor::getUserId(), $resourceId, '');
+
+        return $this->responseMessage(new XenForo_Phrase('changes_saved'));
+    }
+
     /**
      * @return bdApiResource_XenResource_Model_Resource
      */
@@ -625,5 +719,21 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
     protected function _getLikeModel()
     {
         return $this->getModelFromCache('XenForo_Model_Like');
+    }
+
+    /**
+     * @return bdApiResource_XenResource_Model_ResourceField
+     */
+    protected function _getResourceFieldModel()
+    {
+        return $this->getModelFromCache('XenResource_Model_ResourceField');
+    }
+
+    /**
+     * @return bdApiResource_XenResource_Model_ResourceWatch
+     */
+    protected function _getResourceWatchModel()
+    {
+        return $this->getModelFromCache('XenResource_Model_ResourceWatch');
     }
 }

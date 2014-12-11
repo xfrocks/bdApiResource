@@ -15,6 +15,7 @@ class bdApiResource_Listener
             'XenResource_Model_Rating',
             'XenResource_Model_Resource',
             'XenResource_Model_ResourceField',
+            'XenResource_Model_ResourceWatch',
         );
 
         if (in_array($class, $classes)) {

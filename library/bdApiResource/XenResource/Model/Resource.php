@@ -2,10 +2,15 @@
 
 class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenResource_Model_Resource
 {
-    public function getFetchOptionsToPrepareApiData(array $fetchOptions = array())
+    public function getFetchOptionsToPrepareApiData(array $fetchOptions = array(), array $viewingUser = null)
     {
+        $this->standardizeViewingUserReference($viewingUser);
+
         if (isset($fetchOptions['watchUserId'])) {
             $fetchOptions['bdApiResource_likeUserId'] = $fetchOptions['watchUserId'];
+        } else {
+            $fetchOptions['watchUserId'] = $viewingUser['user_id'];
+            $fetchOptions['bdApiResource_likeUserId'] = $viewingUser['user_id'];
         }
 
         if (empty($fetchOptions['join'])) {
@@ -102,8 +107,12 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             }
         }
 
-        if (in_array('like_date', array_keys($resource), true)) {
+        $resourceKeys = array_keys($resource);
+        if (in_array('like_date', $resourceKeys, true)) {
             $data['resource_is_liked'] = !empty($resource['like_date']);
+        }
+        if (in_array('is_watched', $resourceKeys, true)) {
+            $data['resource_is_followed'] = !empty($resource['is_watched']);
         }
 
         $data['links'] = array(
@@ -112,6 +121,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'category' => XenForo_Link::buildApiLink('resource-categories', $resource),
             'ratings' => XenForo_Link::buildApiLink('resources/ratings', $resource),
             'likes' => XenForo_Link::buildApiLink('resources/likes', $resource),
+            'followers' => XenForo_Link::buildApiLink('resources/followers', $resource),
         );
 
         if (!empty($resource['is_fileless'])) {
@@ -138,6 +148,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'delete' => $resource['canDelete'],
             'rate' => $resource['canRate'],
             'like' => $this->_getUpdateModel()->canLikeUpdate(array(), $resource, $category),
+            'follow' => $resource['canWatch'],
         );
 
         if (is_callable(array(
