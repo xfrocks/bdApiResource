@@ -38,6 +38,8 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         $fetchOptions = array(
             'limit' => $limit,
             'page' => $page,
+
+            'watchUserId' => XenForo_Visitor::getUserId(),
         );
 
         $order = $this->_input->filterSingle('order', XenForo_Input::STRING, array('default' => 'natural'));
@@ -106,7 +108,9 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
     {
         $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
 
-        $fetchOptions = $this->_getResourceModel()->getFetchOptionsToPrepareApiData();
+        $fetchOptions = $this->_getResourceModel()->getFetchOptionsToPrepareApiData(array(
+            'watchUserId' => XenForo_Visitor::getUserId(),
+        ));
 
         /** @var XenResource_ControllerHelper_Resource $resourceHelper */
         $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');

@@ -4,6 +4,10 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 {
     public function getFetchOptionsToPrepareApiData(array $fetchOptions = array())
     {
+        if (isset($fetchOptions['watchUserId'])) {
+            $fetchOptions['bdApiResource_likeUserId'] = $fetchOptions['watchUserId'];
+        }
+
         if (empty($fetchOptions['join'])) {
             $fetchOptions['join'] = 0;
         }
@@ -98,6 +102,10 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             }
         }
 
+        if (in_array('like_date', array_keys($resource), true)) {
+            $data['resource_is_liked'] = !empty($resource['like_date']);
+        }
+
         $data['links'] = array(
             'permalink' => XenForo_Link::buildPublicLink('resources', $resource),
             'detail' => XenForo_Link::buildApiLink('resources', $resource),
@@ -129,6 +137,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'edit' => $resource['canEdit'],
             'delete' => $resource['canDelete'],
             'rate' => $resource['canRate'],
+            'like' => $this->_getUpdateModel()->canLikeUpdate(array(), $resource, $category),
         );
 
         if (is_callable(array(
@@ -141,6 +150,32 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 
         return $data;
     }
+
+    public function prepareResourceFetchOptions(array $fetchOptions)
+    {
+        list($selectFields, $joinTables) = array_values(parent::prepareResourceFetchOptions($fetchOptions));
+
+        if (isset($fetchOptions['bdApiResource_likeUserId'])) {
+            if (empty($fetchOptions['bdApiResource_likeUserId'])) {
+                $selectFields .= ',
+					0 AS like_date';
+            } else {
+                $selectFields .= ',
+					liked_content.like_date';
+                $joinTables .= '
+					LEFT JOIN xf_liked_content AS liked_content
+						ON (liked_content.content_type = \'resource_update\'
+							AND liked_content.content_id = resource.description_update_id
+							AND liked_content.like_user_id = ' . $this->_getDb()->quote($fetchOptions['bdApiResource_likeUserId']) . ')';
+            }
+        }
+
+        return array(
+            'selectFields' => $selectFields,
+            'joinTables' => $joinTables,
+        );
+    }
+
 
     /**
      * @return bdApiResource_XenResource_Model_ResourceField
