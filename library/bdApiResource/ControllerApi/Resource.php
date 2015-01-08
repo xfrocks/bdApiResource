@@ -168,6 +168,9 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         $descriptionDw = $dw->getDescriptionDw();
         $descriptionDw->set('message', $input['resource_text']);
 
+        list(, $attachmentTempHash) = $this->getAttachmentTempHash();
+        $descriptionDw->setExtraData(XenResource_DataWriter_Update::DATA_ATTACHMENT_HASH, $attachmentTempHash);
+
         $versionDw = $dw->getVersionDw();
         $dataInput = $this->_input->filter(array(
             'resource_url' => XenForo_Input::STRING,
@@ -284,6 +287,9 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
 
         $descriptionDw = $dw->getDescriptionDw();
         $descriptionDw->set('message', $input['resource_text']);
+
+        list(, $attachmentTempHash) = $this->getAttachmentTempHash();
+        $descriptionDw->setExtraData(XenResource_DataWriter_Update::DATA_ATTACHMENT_HASH, $attachmentTempHash);
 
         if (!empty($resource['external_purchase_url'])) {
             // already an external purchase
@@ -681,6 +687,67 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         return $this->responseMessage(new XenForo_Phrase('changes_saved'));
     }
 
+    public function actionGetAttachments()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+
+        $attachmentId = $this->_input->filterSingle('attachment_id', XenForo_Input::UINT);
+
+        $updates = $this->_getUpdateModel()->getUpdatesByIds(array($resource['description_update_id']));
+        $updates = $this->_getUpdateModel()->getAndMergeAttachmentsIntoUpdates($updates);
+        $update = reset($updates);
+
+        if (empty($attachmentId)) {
+            $attachments = $this->_getResourceModel()->prepareApiDataForAttachments($resource, $update['attachments']);
+
+            $data = array('attachments' => $this->_filterDataMany($attachments));
+        } else {
+            $attachment = false;
+
+            foreach ($update['attachments'] as $_attachment) {
+                if ($_attachment['attachment_id'] == $attachmentId) {
+                    $attachment = $_attachment;
+                }
+            }
+
+            if (!empty($attachment)) {
+                return $this->_getAttachmentHelper()->doData($attachment);
+            } else {
+                return $this->responseError(new XenForo_Phrase('requested_attachment_not_found'), 404);
+            }
+        }
+
+        return $this->responseData('bdApiResource_ViewApi_Resource_Attachments', $data);
+    }
+
+    public function actionPostAttachments()
+    {
+        list($contentData, $hash) = $this->getAttachmentTempHash();
+        $attachmentHelper = $this->_getAttachmentHelper();
+        $response = $attachmentHelper->doUpload('file', $hash, 'resource_update', $contentData);
+
+        if ($response instanceof XenForo_ControllerResponse_Abstract) {
+            return $response;
+        }
+
+        $data = array('attachment' => $this->_filterDataSingle($this->_getResourceModel()->prepareApiDataForAttachment($contentData, $response, $hash)));
+
+        return $this->responseData('bdApiResource_ViewApi_Resource_Attachments', $data);
+    }
+
+    public function actionDeleteAttachments()
+    {
+        list(, $hash) = $this->getAttachmentTempHash();
+        $attachmentId = $this->_input->filterSingle('attachment_id', XenForo_Input::UINT);
+
+        $attachmentHelper = $this->_getAttachmentHelper();
+        return $attachmentHelper->doDelete($hash, $attachmentId);
+    }
+
     /**
      * @return bdApiResource_XenResource_Model_Resource
      */
@@ -735,5 +802,33 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
     protected function _getResourceWatchModel()
     {
         return $this->getModelFromCache('XenResource_Model_ResourceWatch');
+    }
+
+    /**
+     * @return bdApi_ControllerHelper_Attachment
+     */
+    protected function _getAttachmentHelper()
+    {
+        return $this->getHelper('bdApi_ControllerHelper_Attachment');
+    }
+
+    protected function getAttachmentTempHash()
+    {
+        $contentData = $this->_input->filter(array(
+            'resource_id' => XenForo_Input::UINT,
+            'resource_category_id' => XenForo_Input::UINT,
+            'attachment_hash' => XenForo_Input::STRING,
+        ));
+
+        if (empty($contentData['attachment_hash'])) {
+            if (empty($contentData['resource_id']) AND empty($contentData['resource_category_id'])) {
+                throw $this->responseException($this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_attachments_requires_ids'), 400));
+            }
+
+            $hash = md5(serialize($contentData));
+            $this->getRequest()->setParam('attachment_hash', $hash);
+        }
+
+        return array($contentData, $this->_getAttachmentHelper()->getAttachmentTempHash($contentData));
     }
 }

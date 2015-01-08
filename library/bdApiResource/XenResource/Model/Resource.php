@@ -122,6 +122,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'ratings' => XenForo_Link::buildApiLink('resources/ratings', $resource),
             'likes' => XenForo_Link::buildApiLink('resources/likes', $resource),
             'followers' => XenForo_Link::buildApiLink('resources/followers', $resource),
+            'attachments' => XenForo_Link::buildApiLink('resources/attachments', $resource),
         );
 
         if (!empty($resource['is_fileless'])) {
@@ -187,6 +188,62 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
         );
     }
 
+    public function prepareApiDataForAttachments(array $resource, array $attachments, $tempHash = '')
+    {
+        $data = array();
+
+        foreach ($attachments as $key => $attachment) {
+            $data[] = $this->prepareApiDataForAttachment($resource, $attachment, $tempHash);
+        }
+
+        return $data;
+    }
+
+    public function prepareApiDataForAttachment(array $resource, array $attachment, $tempHash = '')
+    {
+        /* @var $attachmentModel XenForo_Model_Attachment */
+        $attachmentModel = $this->getModelFromCache('XenForo_Model_Attachment');
+        $attachment = $attachmentModel->prepareAttachment($attachment);
+
+        $publicKeys = array(
+            // xf_attachment
+            'attachment_id' => 'attachment_id',
+            'view_count' => 'attachment_download_count',
+            // xf_attachment_data
+            'filename' => 'filename',
+        );
+
+        $data = bdApi_Data_Helper_Core::filter($attachment, $publicKeys);
+        $data['resource_id'] = !empty($resource['resource_id']) ? $resource['resource_id'] : 0;
+
+        $paths = XenForo_Application::get('requestPaths');
+        $paths['fullBasePath'] = XenForo_Application::getOptions()->get('boardUrl') . '/';
+
+        $data['links'] = array('permalink' => XenForo_Link::buildPublicLink('attachments', $attachment));
+
+        if (!empty($attachment['thumbnailUrl'])) {
+            $data['links']['thumbnail'] = XenForo_Link::convertUriToAbsoluteUri($attachment['thumbnailUrl'], true, $paths);
+        }
+
+        if (!empty($resource['resource_id'])) {
+            $data['links'] += array(
+                'data' => XenForo_Link::buildApiLink('resources/attachments', $resource, array('attachment_id' => $attachment['attachment_id'])),
+                'resource' => XenForo_Link::buildApiLink('resources', $resource),
+            );
+        } else {
+            $data['links']['data'] = XenForo_Link::buildApiLink('resources/attachments', null, array(
+                'attachment_hash' => $tempHash,
+                'attachment_id' => $attachment['attachment_id'],
+            ));
+        }
+
+        $data['permissions'] = array(
+            'view' => $attachmentModel->canViewAttachment($attachment, $tempHash),
+            'delete' => $attachmentModel->canDeleteAttachment($attachment, $tempHash),
+        );
+
+        return $data;
+    }
 
     /**
      * @return bdApiResource_XenResource_Model_ResourceField
