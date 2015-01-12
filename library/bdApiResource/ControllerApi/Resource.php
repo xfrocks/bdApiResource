@@ -741,7 +741,7 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
 
     public function actionDeleteAttachments()
     {
-        list(, $hash) = $this->getAttachmentTempHash();
+        $hash = $this->_input->filterSingle('attachment_hash', XenForo_Input::STRING);
         $attachmentId = $this->_input->filterSingle('attachment_id', XenForo_Input::UINT);
 
         $attachmentHelper = $this->_getAttachmentHelper();
