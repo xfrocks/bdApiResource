@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<addon addon_id="bdApiResource" title="[bd] API for XenForo Resource" version_string="0.9.7b" version_id="11" url="" install_callback_class="" install_callback_method="" uninstall_callback_class="" uninstall_callback_method="">
+<addon addon_id="bdApiResource" title="[bd] API for XenForo Resource" version_string="1.0.0" version_id="12" url="" install_callback_class="" install_callback_method="" uninstall_callback_class="" uninstall_callback_method="">
   <admin_navigation/>
   <admin_permissions/>
   <admin_style_properties/>
@@ -22,6 +22,7 @@
     <interface_groups/>
   </permissions>
   <phrases>
+    <phrase title="bdapi_resource_slash_resources_attachments_requires_ids" version_id="11" version_string="0.9.7b"><![CDATA[/resources/attachments requires `resource_category_id` for new resource or `resource_id` for existing resource.]]></phrase>
     <phrase title="bdapi_resource_slash_resources_icon_requires_upload_file" version_id="7" version_string="0.9.4b"><![CDATA[/resources/icon requires `file` upload.]]></phrase>
     <phrase title="bdapi_resource_slash_resources_ratings_requires_rating_text" version_id="9" version_string="0.9.6"><![CDATA[/resources/ratings requires `rating_text`.]]></phrase>
     <phrase title="bdapi_resource_slash_resources_ratings_requires_rating_value_in_range" version_id="9" version_string="0.9.6"><![CDATA[/resources/ratings requires `rating_value` in range ({min}..{max}).]]></phrase>
