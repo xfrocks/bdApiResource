@@ -27,16 +27,14 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
     {
         $data = array();
 
-        $fields = $this->_bdApiResource_getFieldModel()->getResourceFields();
-
         foreach ($resources as $key => $resource) {
-            $data[] = $this->prepareApiDataForResource($resource, $category, $fields);
+            $data[] = $this->prepareApiDataForResource($resource, $category);
         }
 
         return $data;
     }
 
-    public function prepareApiDataForResource(array $resource, array $category, array $fields = null)
+    public function prepareApiDataForResource(array $resource, array $category)
     {
         if (!isset($resource['canDownload'])) {
             $resource = $this->prepareResource($resource, $category);
@@ -92,9 +90,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
         }
 
         if (!empty($resource['customFields'])) {
-            if ($fields === null) {
-                $fields = $this->_bdApiResource_getFieldModel()->getResourceFields();
-            }
+            $fields = $this->_bdApiResource_getResourceFields();
 
             $data['resource_custom_fields'] = array();
             foreach ($resource['customFields'] as $fieldId => $fieldValue) {
@@ -243,6 +239,17 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
         );
 
         return $data;
+    }
+
+    protected function _bdApiResource_getResourceFields()
+    {
+        static $fields = null;
+
+        if ($fields === null) {
+            $fields = $this->_bdApiResource_getFieldModel()->getResourceFields();
+        }
+
+        return $fields;
     }
 
     /**

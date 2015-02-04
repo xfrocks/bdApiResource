@@ -605,9 +605,9 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
                     'join' => XenResource_Model_Resource::FETCH_CATEGORY
                 ));
                 $resources = $this->_getResourceModel()->getResourcesByIds($resourceIds, $fetchOptions);
-                $resourceFields = $this->_getResourceFieldModel()->getResourceFields();
+
                 foreach ($resources as $key => $resource) {
-                    $resourcesData[] = $this->_getResourceModel()->prepareApiDataForResource($resource, $resource, $resourceFields);
+                    $resourcesData[] = $this->_getResourceModel()->prepareApiDataForResource($resource, $resource);
                 }
             }
         }
