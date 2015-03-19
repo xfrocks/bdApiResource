@@ -90,7 +90,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
         }
 
         if (!empty($resource['customFields'])) {
-            $fields = $this->_bdApiResource_getResourceFields();
+            $fields = $this->_bdApiResource_getFieldModel()->bdApiResource_getResourceFields();
 
             $data['resource_custom_fields'] = array();
             foreach ($resource['customFields'] as $fieldId => $fieldValue) {
@@ -246,17 +246,6 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
         );
 
         return $data;
-    }
-
-    protected function _bdApiResource_getResourceFields()
-    {
-        static $fields = null;
-
-        if ($fields === null) {
-            $fields = $this->_bdApiResource_getFieldModel()->getResourceFields();
-        }
-
-        return $fields;
     }
 
     /**

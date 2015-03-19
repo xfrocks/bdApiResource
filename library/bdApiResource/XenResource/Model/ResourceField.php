@@ -2,6 +2,17 @@
 
 class bdApiResource_XenResource_Model_ResourceField extends XFCP_bdApiResource_XenResource_Model_ResourceField
 {
+    public function bdApiResource_getResourceFields()
+    {
+        static $fields = null;
+
+        if ($fields === null) {
+            $fields = $this->getResourceFields();
+        }
+
+        return $fields;
+    }
+
     public function prepareApiDataForField(array $field, $fieldValue = null)
     {
         $field = $this->prepareResourceField($field, true, $fieldValue);

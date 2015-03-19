@@ -59,7 +59,7 @@ class bdApiResource_XenResource_Model_Category extends XFCP_bdApiResource_XenRes
 
         if (!empty($category['fieldCache'])) {
             if ($fields === null) {
-                $fields = $this->_bdApiResource_getFieldModel()->getResourceFields();
+                $fields = $this->_bdApiResource_getFieldModel()->bdApiResource_getResourceFields();
             }
 
             $data['resource_custom_fields'] = array();
