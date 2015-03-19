@@ -16,7 +16,7 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
 
         /** @var XenResource_ControllerHelper_Resource $resourceHelper */
         $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
-        $category = $resourceHelper->assertCategoryValidAndViewable($resourceCategoryId);
+        $category = $resourceHelper->assertCategoryValidAndViewable($resourceCategoryId, $this->_getCategoryModel()->getFetchOptionsToPrepareApiData());
 
         $pageNavParams = array(
             'resource_category_id' => $resourceCategoryId,
@@ -39,6 +39,29 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
             'limit' => $limit,
             'page' => $page,
         );
+
+        $inSub = $this->_input->filterSingle('in_sub', XenForo_Input::UINT);
+        if (!empty($inSub)) {
+            $categoryModel = $this->_getCategoryModel();
+            $viewableCategories = $categoryModel->getViewableCategories();
+            $categoryList = $categoryModel->groupCategoriesByParent($viewableCategories);
+
+            $childCategories = (isset($categoryList[$category['resource_category_id']])
+                ? $categoryList[$category['resource_category_id']]
+                : array()
+            );
+            if ($childCategories)
+            {
+                $searchCategoryIds = $categoryModel->getDescendantCategoryIdsFromGrouped($categoryList, $category['resource_category_id']);
+                $searchCategoryIds[] = $category['resource_category_id'];
+            }
+            else
+            {
+                $searchCategoryIds = array($category['resource_category_id']);
+            }
+            $conditions['resource_category_id'] = $searchCategoryIds;
+            $pageNavParams['in_sub'] = 1;
+        }
 
         $order = $this->_input->filterSingle('order', XenForo_Input::STRING, array('default' => 'natural'));
         switch ($order) {
@@ -88,7 +111,32 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
             $conditions,
             $this->_getResourceModel()->getFetchOptionsToPrepareApiData($fetchOptions)
         );
-        $data = $this->_getResourceModel()->prepareApiDataForResources($resources, $category);
+
+        $categoryIds = array();
+        foreach ($resources as $resource) {
+            if ($resource['resource_category_id'] != $category['resource_category_id']) {
+                $categoryIds[] = $resource['resource_category_id'];
+            }
+        }
+        $categories = array();
+        $data = array();
+        if (!empty($categoryIds)) {
+            $categories = $this->_getCategoryModel()->getCategoriesByIds($categoryIds, $this->_getCategoryModel()->getFetchOptionsToPrepareApiData());
+        }
+        $categories[$category['resource_category_id']] = $category;
+
+        foreach ($resources as $resource) {
+            if (!isset($categories[$resource['resource_category_id']])) {
+                continue;
+            }
+            $categoryRef =& $categories[$resource['resource_category_id']];
+            $resourceData = $this->_getResourceModel()->prepareApiDataForResource($resource, $categoryRef);
+            if (!empty($pageNavParams['in_sub'])) {
+                $resourceData['category'] = $this->_getCategoryModel()->prepareApiDataForCategory($categoryRef);
+            }
+
+            $data[] = $resourceData;
+        }
 
         $total = $this->_getResourceModel()->countResources($conditions);
 
@@ -96,6 +144,10 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
             'resources' => $this->_filterDataMany($data),
             'resources_total' => $total,
         );
+
+        if (!$this->_isFieldExcluded('category') && empty($pageNavParams['in_sub'])) {
+            $data['category'] = $this->_filterDataSingle($this->_getCategoryModel()->prepareApiDataForCategory($category), array('category'));
+        }
 
         bdApi_Data_Helper_Core::addPageLinks($this->_input, $data, $limit, $total, $page, 'resources', array(), $pageNavParams);
 

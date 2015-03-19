@@ -2,6 +2,13 @@
 
 class bdApiResource_XenResource_Model_Category extends XFCP_bdApiResource_XenResource_Model_Category
 {
+    public function getFetchOptionsToPrepareApiData(array $fetchOptions = array(), array $viewingUser = null)
+    {
+        $this->standardizeViewingUserReference($viewingUser);
+
+        return $fetchOptions;
+    }
+
     public function prepareApiDataForCategories(array $categories)
     {
         $data = array();
@@ -35,6 +42,10 @@ class bdApiResource_XenResource_Model_Category extends XFCP_bdApiResource_XenRes
             'detail' => XenForo_Link::buildApiLink('resource-categories', $category),
             'resources' => XenForo_Link::buildApiLink('resources', null, array(
                 'resource_category_id' => $category['resource_category_id']
+            )),
+            'resources_in_sub' => XenForo_Link::buildApiLink('resources', null, array(
+                'resource_category_id' => $category['resource_category_id'],
+                'in_sub' => 1,
             )),
         );
 
