@@ -121,17 +121,24 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'attachments' => XenForo_Link::buildApiLink('resources/attachments', $resource),
         );
 
+        $data['resource_has_url'] = false;
+        $data['resource_has_file'] = false;
+        $data['resource_price'] = null;
+        $data['resource_currency'] = null;
         if (!empty($resource['is_fileless'])) {
             if (!empty($resource['external_purchase_url'])) {
+                $data['resource_has_url'] = true;
                 $data['links']['content'] = $resource['external_purchase_url'];
                 $data['resource_price'] = $resource['price'];
                 $data['resource_currency'] = $resource['currency'];
             }
         } else {
             if (!empty($resource['download_url'])) {
+                $data['resource_has_url'] = true;
                 $data['links']['content'] = $resource['download_url'];
             } else {
-                $data['links']['content'] = XenForo_Link::buildPublicLink('resources/download', $resource, array('version' => $resource['current_version_id'],));
+                $data['resource_has_file'] = true;
+                $data['links']['content'] = XenForo_Link::buildPublicLink('resources/download', $resource, array('version' => $resource['current_version_id']));
             }
         }
 
