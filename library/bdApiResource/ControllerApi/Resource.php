@@ -9,18 +9,7 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
             return $this->responseReroute(__CLASS__, 'get-single');
         }
 
-        $resourceCategoryId = $this->_input->filterSingle('resource_category_id', XenForo_Input::UINT);
-        if (empty($resourceCategoryId)) {
-            return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_requires_resource_category_id'), 400);
-        }
-
-        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
-        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
-        $category = $resourceHelper->assertCategoryValidAndViewable($resourceCategoryId, $this->_getCategoryModel()->getFetchOptionsToPrepareApiData());
-
-        $pageNavParams = array(
-            'resource_category_id' => $resourceCategoryId,
-        );
+        $pageNavParams = array();
         $page = $this->_input->filterSingle('page', XenForo_Input::UINT);
         $limit = XenForo_Application::get('options')->discussionsPerPage;
 
@@ -33,25 +22,38 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         $conditions = array(
             'deleted' => false,
             'moderated' => false,
-            'resource_category_id' => $category['resource_category_id'],
         );
         $fetchOptions = array(
             'limit' => $limit,
             'page' => $page,
         );
 
+        $resourceCategoryId = $this->_input->filterSingle('resource_category_id', XenForo_Input::UINT);
+        $category = null;
+        $categories = array();
+        if (!empty($resourceCategoryId)) {
+            /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+            $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+            $category = $resourceHelper->assertCategoryValidAndViewable($resourceCategoryId, $this->_getCategoryModel()->getFetchOptionsToPrepareApiData());
+
+            $conditions['resource_category_id'] = $category['resource_category_id'];
+            $pageNavParams['resource_category_id'] = $category['resource_category_id'];
+            $categories[$category['resource_category_id']] = $category;
+        } else {
+            $categories = $this->_getCategoryModel()->getViewableCategories($this->_getCategoryModel()->getFetchOptionsToPrepareApiData());
+        }
+
         $inSub = $this->_input->filterSingle('in_sub', XenForo_Input::UINT);
-        if (!empty($inSub)) {
-            $categoryModel = $this->_getCategoryModel();
-            $viewableCategories = $categoryModel->getViewableCategories();
-            $categoryList = $categoryModel->groupCategoriesByParent($viewableCategories);
+        if (!empty($category) && !empty($inSub)) {
+            $categories = $this->_getCategoryModel()->getViewableCategories($this->_getCategoryModel()->getFetchOptionsToPrepareApiData());
+            $categoryList = $this->_getCategoryModel()->groupCategoriesByParent($categories);
 
             $childCategories = (isset($categoryList[$category['resource_category_id']])
                 ? $categoryList[$category['resource_category_id']]
                 : array()
             );
             if ($childCategories) {
-                $searchCategoryIds = $categoryModel->getDescendantCategoryIdsFromGrouped($categoryList, $category['resource_category_id']);
+                $searchCategoryIds = $this->_getCategoryModel()->getDescendantCategoryIdsFromGrouped($categoryList, $category['resource_category_id']);
                 $searchCategoryIds[] = $category['resource_category_id'];
             } else {
                 $searchCategoryIds = array($category['resource_category_id']);
@@ -109,26 +111,15 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
             $this->_getResourceModel()->getFetchOptionsToPrepareApiData($fetchOptions)
         );
 
-        $categoryIds = array();
-        foreach ($resources as $resource) {
-            if ($resource['resource_category_id'] != $category['resource_category_id']) {
-                $categoryIds[] = $resource['resource_category_id'];
-            }
-        }
-        $categories = array();
         $data = array();
-        if (!empty($categoryIds)) {
-            $categories = $this->_getCategoryModel()->getCategoriesByIds($categoryIds, $this->_getCategoryModel()->getFetchOptionsToPrepareApiData());
-        }
-        $categories[$category['resource_category_id']] = $category;
-
         foreach ($resources as $resource) {
             if (!isset($categories[$resource['resource_category_id']])) {
                 continue;
             }
             $categoryRef =& $categories[$resource['resource_category_id']];
+
             $resourceData = $this->_getResourceModel()->prepareApiDataForResource($resource, $categoryRef);
-            if (!empty($pageNavParams['in_sub'])) {
+            if (empty($conditions['resource_category_id']) OR is_array($conditions['resource_category_id'])) {
                 $resourceData['category'] = $this->_getCategoryModel()->prepareApiDataForCategory($categoryRef);
             }
 
@@ -142,7 +133,7 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
             'resources_total' => $total,
         );
 
-        if (!$this->_isFieldExcluded('category') && empty($pageNavParams['in_sub'])) {
+        if (!$this->_isFieldExcluded('category') && !empty($category) && empty($pageNavParams['in_sub'])) {
             $data['category'] = $this->_filterDataSingle($this->_getCategoryModel()->prepareApiDataForCategory($category), array('category'));
         }
 
