@@ -50,13 +50,10 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
                 ? $categoryList[$category['resource_category_id']]
                 : array()
             );
-            if ($childCategories)
-            {
+            if ($childCategories) {
                 $searchCategoryIds = $categoryModel->getDescendantCategoryIdsFromGrouped($categoryList, $category['resource_category_id']);
                 $searchCategoryIds[] = $category['resource_category_id'];
-            }
-            else
-            {
+            } else {
                 $searchCategoryIds = array($category['resource_category_id']);
             }
             $conditions['resource_category_id'] = $searchCategoryIds;
@@ -800,6 +797,41 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         return $attachmentHelper->doDelete($hash, $attachmentId);
     }
 
+    public function actionGetFile()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+
+        $version = $this->_getVersionModel()->getVersionById($resource['current_version_id'], array(
+            'join' => XenResource_Model_Version::FETCH_FILE
+        ));
+        if (empty($version)) {
+            return $this->responseNoPermission();
+        }
+
+        if (!$this->_getVersionModel()->canDownloadVersion($version, $resource, $category, $errorPhraseKey)) {
+            throw $this->getErrorOrNoPermissionResponseException($errorPhraseKey);
+        }
+
+        $this->_getVersionModel()->logVersionDownload($version, XenForo_Visitor::getUserId());
+
+        if ($version['download_url']) {
+            return $this->responseRedirect(
+                XenForo_ControllerResponse_Redirect::RESOURCE_CANONICAL,
+                $version['download_url']
+            );
+        } else {
+            /** @var XenForo_Model_Attachment $attachmentModel */
+            $attachmentModel = $this->getModelFromCache('XenForo_Model_Attachment');
+            $attachment = $attachmentModel->getAttachmentById($version['attachment_id']);
+
+            return $this->_getAttachmentHelper()->doData($attachment);
+        }
+    }
+
     /**
      * @return bdApiResource_XenResource_Model_Resource
      */
@@ -854,6 +886,14 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
     protected function _getResourceWatchModel()
     {
         return $this->getModelFromCache('XenResource_Model_ResourceWatch');
+    }
+
+    /**
+     * @return XenResource_Model_Version
+     */
+    protected function _getVersionModel()
+    {
+        return $this->getModelFromCache('XenResource_Model_Version');
     }
 
     /**

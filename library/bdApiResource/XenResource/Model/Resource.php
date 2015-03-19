@@ -138,7 +138,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
                 $data['links']['content'] = $resource['download_url'];
             } else {
                 $data['resource_has_file'] = true;
-                $data['links']['content'] = XenForo_Link::buildPublicLink('resources/download', $resource, array('version' => $resource['current_version_id']));
+                $data['links']['content'] = XenForo_Link::buildApiLink('resources/file', $resource);
             }
         }
 
