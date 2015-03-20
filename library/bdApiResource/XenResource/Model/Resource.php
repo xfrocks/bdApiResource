@@ -149,6 +149,9 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
         $data['permissions'] = array(
             'download' => $resource['canDownload'],
             'edit' => $resource['canEdit'],
+            'edit_file' => empty($resource['is_fileless']) && empty($resource['download_url']),
+            'edit_url' => !empty($resource['download_url']) || !empty($resource['external_purchase_url']),
+            'edit_price' => !empty($resource['external_purchase_url']),
             'delete' => $resource['canDelete'],
             'rate' => $resource['canRate'],
             'like' => $this->_getUpdateModel()->canLikeUpdate(array(), $resource, $category),
