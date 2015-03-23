@@ -163,6 +163,11 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
 
     public function actionPostIndex()
     {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+        if (!empty($resourceId)) {
+            return $this->actionPutIndex();
+        }
+
         $resourceCategoryId = $this->_input->filterSingle('resource_category_id', XenForo_Input::UINT);
         if (empty($resourceCategoryId)) {
             return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_requires_resource_category_id'), 400);
@@ -286,8 +291,9 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         return $this->responseReroute(__CLASS__, 'get-single');
     }
 
-    public function actionPutIndex()
+    protected function actionPutIndex()
     {
+        // temporary switched to use POST request because we can't parse multipart in PUT
         $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
 
         /** @var XenResource_ControllerHelper_Resource $resourceHelper */
