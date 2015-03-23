@@ -52,11 +52,15 @@ class bdApiResource_XenResource_Model_Category extends XFCP_bdApiResource_XenRes
         $data['permissions'] = array(
             'add' => $category['canAdd'],
 
-            'add_file' => !empty($category['allow_local']),
-            'add_url' => (!empty($category['allow_external']) || !empty($category['allow_commercial_external'])),
-            'add_price' => !empty($category['allow_commercial_external']),
-            'add_no_file_or_url' => !empty($category['allow_fileless']),
+            'add_file' => $category['canAdd'] && !empty($category['allow_local']),
+            'add_url' => $category['canAdd'] && (!empty($category['allow_external']) || !empty($category['allow_commercial_external'])),
+            'add_price' => $category['canAdd'] && !empty($category['allow_commercial_external']),
+            'add_no_file_or_url' => $category['canAdd'] && !empty($category['allow_fileless']),
         );
+
+        /** @var XenResource_Model_Resource $resourceModel */
+        $resourceModel = $this->getModelFromCache('XenResource_Model_Resource');
+        $data['currencies'] = $resourceModel->getAvailableCurrencies();
 
         if (!empty($category['fieldCache'])) {
             if ($fields === null) {
