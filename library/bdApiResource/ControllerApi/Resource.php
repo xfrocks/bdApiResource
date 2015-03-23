@@ -741,6 +741,13 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         $updates = $this->_getUpdateModel()->getAndMergeAttachmentsIntoUpdates($updates);
         $update = reset($updates);
 
+        if (empty($update)) {
+            return $this->responseNoPermission();
+        }
+        if (empty($update['attachments'])) {
+            $update['attachments'] = array();
+        }
+
         if (empty($attachmentId)) {
             $attachments = $this->_getResourceModel()->prepareApiDataForAttachments($resource, $update['attachments']);
 
