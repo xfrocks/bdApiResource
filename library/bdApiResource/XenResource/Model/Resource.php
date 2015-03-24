@@ -74,7 +74,8 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'messagePlainText' => 'resource_text_plain_text',
 
             // description update
-            'description_update_likes' => 'like_count',
+            'description_update_likes' => 'resource_like_count',
+            'description_update_attach_count' => 'resource_attachment_count',
         );
         $data = bdApi_Data_Helper_Core::filter($resource, $publicKeys);
 
