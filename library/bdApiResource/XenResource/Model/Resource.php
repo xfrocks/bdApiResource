@@ -101,7 +101,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 
             $data['resource_custom_fields'] = array();
             foreach ($resource['customFields'] as $fieldId => $fieldValue) {
-                if (isset($fields[$fieldId])) {
+                if (!empty($fields[$fieldId])) {
                     $field = $fields[$fieldId];
                     $fieldData = $this->_bdApiResource_getFieldModel()->prepareApiDataForField($field, $fieldValue);
 
