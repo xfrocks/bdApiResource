@@ -111,25 +111,14 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
             $this->_getResourceModel()->getFetchOptionsToPrepareApiData($fetchOptions)
         );
 
-        $data = array();
-        foreach ($resources as $resource) {
-            if (!isset($categories[$resource['resource_category_id']])) {
-                continue;
-            }
-            $categoryRef =& $categories[$resource['resource_category_id']];
-
-            $resourceData = $this->_getResourceModel()->prepareApiDataForResource($resource, $categoryRef);
-            if (empty($conditions['resource_category_id']) OR is_array($conditions['resource_category_id'])) {
-                $resourceData['category'] = $this->_getCategoryModel()->prepareApiDataForCategory($categoryRef);
-            }
-
-            $data[] = $resourceData;
-        }
+        $resourcesData = $this->_prepareResources($resources, $categories, array(
+            'includeCategory' => empty($conditions['resource_category_id']) OR is_array($conditions['resource_category_id']),
+        ));
 
         $total = $this->_getResourceModel()->countResources($conditions);
 
         $data = array(
-            'resources' => $this->_filterDataMany($data),
+            'resources' => $this->_filterDataMany($resourcesData),
             'resources_total' => $total,
         );
 
@@ -755,7 +744,7 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         }
 
         if (empty($attachmentId)) {
-            $attachments = $this->_getResourceModel()->prepareApiDataForAttachments($resource, $update['attachments']);
+            $attachments = $this->_getResourceModel()->prepareApiDataForAttachments($update['attachments'], $update, $resource, $category);
 
             $data = array('attachments' => $this->_filterDataMany($attachments));
         } else {
@@ -787,7 +776,10 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
             return $response;
         }
 
-        $data = array('attachment' => $this->_filterDataSingle($this->_getResourceModel()->prepareApiDataForAttachment($contentData, $response, $hash)));
+        $contentData['resource_update_id'] = 0;
+        $attachmentData = $this->_getResourceModel()->prepareApiDataForAttachment($response, $contentData, $contentData, $contentData, $hash);
+
+        $data = array('attachment' => $this->_filterDataSingle($attachmentData));
 
         return $this->responseData('bdApiResource_ViewApi_Resource_Attachments', $data);
     }
@@ -864,6 +856,31 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         $reportModel->reportContent('resource_update', $update, $message);
 
         return $this->responseMessage(new XenForo_Phrase('changes_saved'));
+    }
+
+    protected function _prepareResources(array $resources, array $categories, array $options = array())
+    {
+        if (!$this->_isFieldExcluded('attachments')) {
+            $resources = $this->_getResourceModel()->bdApiResource_getAndMergeAttachmentsIntoResources($resources);
+        }
+
+        $resourcesData = array();
+        foreach ($resources as $resource) {
+            if (!isset($categories[$resource['resource_category_id']])) {
+                continue;
+            }
+            $categoryRef =& $categories[$resource['resource_category_id']];
+
+            $resourceData = $this->_getResourceModel()->prepareApiDataForResource($resource, $categoryRef);
+
+            if (!empty($options['includeCategory'])) {
+                $resourceData['category'] = $this->_getCategoryModel()->prepareApiDataForCategory($categoryRef);
+            }
+
+            $resourcesData[] = $resourceData;
+        }
+
+        return $resourcesData;
     }
 
     /**

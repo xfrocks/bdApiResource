@@ -48,14 +48,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             $resource['messagePlainText'] = bdApi_Data_Helper_Message::getPlainText($resource['message']);
         }
 
-        $descriptionUpdate = array();
-        if (!empty($resource['bdApiResource_joinDescriptionUpdate'])) {
-            $descriptionUpdate = array(
-                'resource_update_id' => $resource['description_update_id'],
-                'resource_id' => $resource['resource_id'],
-                'message_state' => $resource['description_update_message_state'],
-            );
-        }
+        $descriptionUpdate = $this->_bdApiResource_getDescriptionUpdateFromResource($resource);
 
         $publicKeys = array(
             // xf_resource
@@ -124,6 +117,10 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             $data['resource_is_followed'] = !empty($resource['is_watched']);
         }
 
+        if (!empty($resource['attachments'])) {
+            $data['attachments'] = $this->prepareApiDataForAttachments($resource['attachments'], $descriptionUpdate, $resource, $category);
+        }
+
         $data['links'] = array(
             'permalink' => XenForo_Link::buildPublicLink('resources', $resource),
             'detail' => XenForo_Link::buildApiLink('resources', $resource),
@@ -132,8 +129,11 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'likes' => XenForo_Link::buildApiLink('resources/likes', $resource),
             'report' => XenForo_Link::buildApiLink('resources/report', $resource),
             'followers' => XenForo_Link::buildApiLink('resources/followers', $resource),
-            'attachments' => XenForo_Link::buildApiLink('resources/attachments', $resource),
         );
+
+        if (!empty($descriptionUpdate['attach_count'])) {
+            $data['links']['attachments'] = XenForo_Link::buildApiLink('resources/attachments', $resource);
+        }
 
         $data['resource_has_url'] = false;
         $data['resource_has_file'] = false;
@@ -221,18 +221,40 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
         );
     }
 
-    public function prepareApiDataForAttachments(array $resource, array $attachments, $tempHash = '')
+    public function bdApiResource_getAndMergeAttachmentsIntoResources(array $resources)
+    {
+        $updates = array();
+
+        foreach ($resources as $resource) {
+            $update = $this->_bdApiResource_getDescriptionUpdateFromResource($resource);
+            if (!empty($update)) {
+                $updates[$update['resource_update_id']] = $update;
+            }
+        }
+
+        $updates = $this->_getUpdateModel()->getAndMergeAttachmentsIntoUpdates($updates);
+
+        foreach ($updates as $update) {
+            if (!empty($update['attachments']) && isset($resources[$update['resource_id']])) {
+                $resources[$update['resource_id']]['attachments'] = $update['attachments'];
+            }
+        }
+
+        return $resources;
+    }
+
+    public function prepareApiDataForAttachments(array $attachments, array $update, array $resource, array $category, $tempHash = '')
     {
         $data = array();
 
         foreach ($attachments as $key => $attachment) {
-            $data[] = $this->prepareApiDataForAttachment($resource, $attachment, $tempHash);
+            $data[] = $this->prepareApiDataForAttachment($attachment, $update, $resource, $category, $tempHash);
         }
 
         return $data;
     }
 
-    public function prepareApiDataForAttachment(array $resource, array $attachment, $tempHash = '')
+    public function prepareApiDataForAttachment(array $attachment, array $update, array $resource, array $category, $tempHash = '')
     {
         /* @var $attachmentModel XenForo_Model_Attachment */
         $attachmentModel = $this->getModelFromCache('XenForo_Model_Attachment');
@@ -271,11 +293,31 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
         }
 
         $data['permissions'] = array(
-            'view' => $attachmentModel->canViewAttachment($attachment, $tempHash),
-            'delete' => $attachmentModel->canDeleteAttachment($attachment, $tempHash),
+            'view' => !empty($tempHash)
+                ? $attachmentModel->canViewAttachment($attachment, $tempHash)
+                : $this->_getUpdateModel()->canViewUpdateImages($resource, $category),
+            'delete' => !empty($tempHash)
+                ? $attachmentModel->canDeleteAttachment($attachment, $tempHash)
+                : $this->_getUpdateModel()->canUploadAndManageUpdateAttachment(),
         );
 
         return $data;
+    }
+
+    protected function _bdApiResource_getDescriptionUpdateFromResource(array $resource)
+    {
+        $descriptionUpdate = array();
+
+        if (!empty($resource['bdApiResource_joinDescriptionUpdate'])) {
+            $descriptionUpdate = array(
+                'resource_update_id' => $resource['description_update_id'],
+                'resource_id' => $resource['resource_id'],
+                'attach_count' => $resource['description_update_attach_count'],
+                'message_state' => $resource['description_update_message_state'],
+            );
+        }
+
+        return $descriptionUpdate;
     }
 
     /**
