@@ -2,3 +2,4 @@
 *.devhelper
 library/bdApiResource/DevHelper/Generated
 library/bdApiResource/FileSums.php
+library/bdApiResource/DevHelper/XFCP

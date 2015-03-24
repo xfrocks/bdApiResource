@@ -836,6 +836,36 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         }
     }
 
+    public function actionPostReport()
+    {
+        $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
+
+        /** @var XenResource_ControllerHelper_Resource $resourceHelper */
+        $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
+        list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId);
+        $update = $resourceHelper->getUpdateOrError($resource['description_update_id']);
+
+        if (!$this->_getUpdateModel()->canReportUpdate($update, $resource, $category, $errorPhraseKey)) {
+            throw $this->getErrorOrNoPermissionResponseException($errorPhraseKey);
+        }
+
+        $message = $this->_input->filterSingle('message', XenForo_Input::STRING);
+        if (!$message) {
+            return $this->responseError(new XenForo_Phrase('please_enter_reason_for_reporting_this_message'), 400);
+        }
+
+        $this->assertNotFlooding('report');
+
+        $update['resource'] = $resource;
+        $update['category'] = $category;
+
+        /* @var $reportModel XenForo_Model_Report */
+        $reportModel = XenForo_Model::create('XenForo_Model_Report');
+        $reportModel->reportContent('resource_update', $update, $message);
+
+        return $this->responseMessage(new XenForo_Phrase('changes_saved'));
+    }
+
     /**
      * @return bdApiResource_XenResource_Model_Resource
      */

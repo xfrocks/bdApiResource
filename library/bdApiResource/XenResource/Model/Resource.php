@@ -19,6 +19,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 
         $fetchOptions['join'] |= XenResource_Model_Resource::FETCH_DESCRIPTION;
         $fetchOptions['join'] |= XenResource_Model_Resource::FETCH_VERSION;
+        $fetchOptions['bdApiResource_joinDescriptionUpdate'] = true;
 
         return $fetchOptions;
     }
@@ -47,6 +48,15 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             $resource['messagePlainText'] = bdApi_Data_Helper_Message::getPlainText($resource['message']);
         }
 
+        $descriptionUpdate = array();
+        if (!empty($resource['bdApiResource_joinDescriptionUpdate'])) {
+            $descriptionUpdate = array(
+                'resource_update_id' => $resource['description_update_id'],
+                'resource_id' => $resource['resource_id'],
+                'message_state' => $resource['description_update_message_state'],
+            );
+        }
+
         $publicKeys = array(
             // xf_resource
             'resource_id' => 'resource_id',
@@ -69,6 +79,9 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'message' => 'resource_text',
             'messageHtml' => 'resource_text_html',
             'messagePlainText' => 'resource_text_plain_text',
+
+            // description update
+            'description_update_likes' => 'like_count',
         );
         $data = bdApi_Data_Helper_Core::filter($resource, $publicKeys);
 
@@ -117,6 +130,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'category' => XenForo_Link::buildApiLink('resource-categories', $resource),
             'ratings' => XenForo_Link::buildApiLink('resources/ratings', $resource),
             'likes' => XenForo_Link::buildApiLink('resources/likes', $resource),
+            'report' => XenForo_Link::buildApiLink('resources/report', $resource),
             'followers' => XenForo_Link::buildApiLink('resources/followers', $resource),
             'attachments' => XenForo_Link::buildApiLink('resources/attachments', $resource),
         );
@@ -154,7 +168,8 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'edit_price' => $resource['canEdit'] && !empty($data['resource_price']) && !empty($data['resource_currency']),
             'delete' => $resource['canDelete'],
             'rate' => $resource['canRate'],
-            'like' => $this->_getUpdateModel()->canLikeUpdate(array(), $resource, $category),
+            'like' => $this->_getUpdateModel()->canLikeUpdate($descriptionUpdate, $resource, $category),
+            'report' => $this->_getUpdateModel()->canReportUpdate($descriptionUpdate, $resource, $category),
             'follow' => $resource['canWatch'],
         );
 
@@ -185,6 +200,18 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
 						ON (liked_content.content_type = \'resource_update\'
 							AND liked_content.content_id = resource.description_update_id
 							AND liked_content.like_user_id = ' . $this->_getDb()->quote($fetchOptions['bdApiResource_likeUserId']) . ')';
+            }
+        }
+
+        if (!empty($fetchOptions['bdApiResource_joinDescriptionUpdate'])) {
+            if (!empty($fetchOptions['join'])
+                && $fetchOptions['join'] & XenResource_Model_Resource::FETCH_DESCRIPTION
+            ) {
+                $selectFields .= ',
+                    1 AS bdApiResource_joinDescriptionUpdate,
+					resource_update.attach_count AS description_update_attach_count,
+                    resource_update.message_state AS description_update_message_state,
+                    resource_update.likes AS description_update_likes';
             }
         }
 
