@@ -10,6 +10,7 @@ class bdApiResource_Listener
 
         static $classes = array(
             'XenResource_DataWriter_Resource',
+            'XenResource_DataWriter_Version',
 
             'XenResource_Model_Category',
             'XenResource_Model_Rating',

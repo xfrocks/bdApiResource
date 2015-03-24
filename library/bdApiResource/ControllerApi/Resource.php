@@ -326,16 +326,19 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         list(, $attachmentTempHash) = $this->getAttachmentTempHash();
         $descriptionDw->setExtraData(XenResource_DataWriter_Update::DATA_ATTACHMENT_HASH, $attachmentTempHash);
 
-        if (!empty($resource['external_purchase_url'])) {
-            // already an external purchase
-            $versionDw = $dw->getVersionDw();
-            $dataInput = $this->_input->filter(array(
-                'resource_url' => XenForo_Input::STRING,
-                'resource_price' => XenForo_Input::UNUM,
-                'resource_currency' => XenForo_Input::STRING,
-                'resource_version' => XenForo_Input::STRING,
-            ));
+        $dataInput = $this->_input->filter(array(
+            'resource_url' => XenForo_Input::STRING,
+            'resource_price' => XenForo_Input::UNUM,
+            'resource_currency' => XenForo_Input::STRING,
+            'resource_version' => array(
+                XenForo_Input::STRING,
+                'default' => XenForo_Locale::date(XenForo_Application::$time, 'Y-m-d'),
+            ),
+        ));
+        $versionDw = $dw->getVersionDw();
 
+        if (!empty($resource['external_purchase_url'])) {
+            // an external purchase resource
             if (empty($dataInput['resource_price'])) {
                 return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_requires_resource_price'), 400);
             }
@@ -353,10 +356,59 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
             ));
             $versionDw->setOption(XenResource_DataWriter_Version::OPTION_IS_FILELESS, true);
 
-            if ($dataInput['resource_version'] === '') {
-                $dataInput['resource_version'] = XenForo_Locale::date(XenForo_Application::$time, 'Y-m-d');
-            }
             $versionDw->set('version_string', $dataInput['resource_version']);
+        } else {
+            $downloadUrl = $versionDw->get('download_url');
+            $newVersionIsNeeded = false;
+
+            if (!empty($downloadUrl)) {
+                // an external url resource
+                if (empty($dataInput['resource_url'])) {
+                    return $this->responseError(new XenForo_Phrase('bdapi_resource_slash_resources_requires_resource_url'), 400);
+                }
+
+                if ($dataInput['resource_url'] != $downloadUrl) {
+                    $newVersionIsNeeded = 'url';
+                }
+            } elseif (empty($resource['is_fileless'])) {
+                // a local file resource
+                $dataFile = XenForo_Upload::getUploadedFile('resource_file');
+
+                if (!empty($dataFile)) {
+                    $newVersionIsNeeded = 'file';
+                }
+            }
+
+            if (!empty($newVersionIsNeeded)) {
+                /** @var bdApiResource_XenResource_DataWriter_Version $newVersionDw */
+                $newVersionDw = XenForo_DataWriter::create('XenResource_DataWriter_Version');
+                $newVersionDw->bulkSet(array(
+                    'resource_id' => $resource['resource_id'],
+                    'version_string' => $dataInput['resource_version'],
+                ));
+
+                switch ($newVersionIsNeeded) {
+                    case 'file':
+                        /** @var bdApi_ControllerHelper_Attachment $attachmentHelper */
+                        $attachmentHelper = $this->getHelper('bdApi_ControllerHelper_Attachment');
+
+                        $fileHash = md5($resource['resource_id'] . $visitor['user_id'] . XenForo_Application::$time);
+                        $attachmentHelper->doUpload('resource_file', $fileHash, 'resource_version', array(
+                            'resource_id' => $resource['resource_id'],
+                        ));
+
+                        $newVersionDw->setExtraData(XenResource_DataWriter_Version::DATA_ATTACHMENT_HASH, $fileHash);
+                        break;
+
+                    case 'url':
+                        $newVersionDw->set('download_url', $dataInput['resource_url']);
+                        break;
+                }
+
+                $newVersionDw->bdApiResource_onControllerSave($category, $visitor);
+
+                // it will be saved together with resource data writer below
+            }
         }
 
         $fieldValues = $this->_input->filterSingle('resource_custom_fields', XenForo_Input::ARRAY_SIMPLE);
@@ -364,7 +416,20 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
 
         $dw->bdApiResource_onControllerSave($category, $visitor);
 
-        $dw->save();
+        XenForo_Db::beginTransaction();
+        try {
+            $dw->save();
+
+            if (!empty($newVersionDw)) {
+                $newVersionDw->save();
+            }
+        } catch (Exception $e) {
+            XenForo_Db::rollback();
+            throw new $e;
+        }
+
+        XenForo_Db::commit();
+
         $resource = $dw->getMergedData();
 
         XenForo_Model_Log::logModeratorAction('resource', $resource, 'edit', array_merge($input, array(
