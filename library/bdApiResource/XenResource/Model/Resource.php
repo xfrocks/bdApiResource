@@ -17,6 +17,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             $fetchOptions['join'] = 0;
         }
 
+        $fetchOptions['join'] |= XenResource_Model_Resource::FETCH_USER;
         $fetchOptions['join'] |= XenResource_Model_Resource::FETCH_DESCRIPTION;
         $fetchOptions['join'] |= XenResource_Model_Resource::FETCH_VERSION;
         $fetchOptions['bdApiResource_joinDescriptionUpdate'] = true;
@@ -134,6 +135,7 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
             'likes' => XenForo_Link::buildApiLink('resources/likes', $resource),
             'report' => XenForo_Link::buildApiLink('resources/report', $resource),
             'followers' => XenForo_Link::buildApiLink('resources/followers', $resource),
+            'creator_avatar' => XenForo_Template_Helper_Core::callHelper('avatar', array($resource, 'm', false, true)),
         );
 
         if (!empty($descriptionUpdate['attach_count'])) {
