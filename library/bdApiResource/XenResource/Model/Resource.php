@@ -79,6 +79,10 @@ class bdApiResource_XenResource_Model_Resource extends XFCP_bdApiResource_XenRes
         );
         $data = bdApi_Data_Helper_Core::filter($resource, $publicKeys);
 
+        if (!empty($resource['review_count'])) {
+            $data['resource_rating_count'] += $resource['review_count'];
+        }
+
         if (isset($resource['resource_state'])) {
             switch ($resource['resource_state']) {
                 case 'visible':
