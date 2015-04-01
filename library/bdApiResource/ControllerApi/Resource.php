@@ -141,7 +141,10 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');
         list($resource, $category) = $resourceHelper->assertResourceValidAndViewable($resourceId, $fetchOptions);
 
-        $data = $this->_getResourceModel()->prepareApiDataForResource($resource, $category);
+        $resources = array($resource['resource_id'] => $resource);
+        $categories = array($category['resource_category_id'] => $category);
+        $data = $this->_prepareResources($resources, $categories);
+        $data = reset($data);
 
         $data = array(
             'resource' => $this->_filterDataSingle($data),
