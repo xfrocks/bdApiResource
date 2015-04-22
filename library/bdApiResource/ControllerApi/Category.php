@@ -6,7 +6,7 @@ class bdApiResource_ControllerApi_Category extends bdApi_ControllerApi_Abstract
     {
         $resourceCategoryId = $this->_input->filterSingle('resource_category_id', XenForo_Input::UINT);
         if (!empty($resourceCategoryId)) {
-            return $this->responseReroute(__CLASS__, 'get-single');
+            return $this->responseReroute(__CLASS__, 'single');
         }
 
         $categories = $this->_getCategoryModel()->getViewableCategories($this->_getCategoryModel()->getFetchOptionsToPrepareApiData());
@@ -19,7 +19,7 @@ class bdApiResource_ControllerApi_Category extends bdApi_ControllerApi_Abstract
         return $this->responseData('bdApiResource_ViewApi_Category_List', $data);
     }
 
-    public function actionGetSingle()
+    public function actionSingle()
     {
         /** @var XenResource_ControllerHelper_Resource $resourceHelper */
         $resourceHelper = $this->getHelper('XenResource_ControllerHelper_Resource');

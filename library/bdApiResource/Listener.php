@@ -9,6 +9,8 @@ class bdApiResource_Listener
         }
 
         static $classes = array(
+            'XenForo_Model_Search',
+
             'XenResource_DataWriter_Resource',
             'XenResource_DataWriter_Version',
 
@@ -29,5 +31,11 @@ class bdApiResource_Listener
         bdApi_Route_PrefixApi::addRoute($routes, 'resources', 'bdApiResource_Route_PrefixApi_Resources', 'data_only');
         bdApi_Route_PrefixApi::addRoute($routes, 'resource-categories', 'bdApiResource_Route_PrefixApi_Categories', 'data_only');
     }
+
+    public static function file_health_check(XenForo_ControllerAdmin_Abstract $controller, array &$hashes)
+    {
+        $hashes += bdApiResource_FileSums::getHashes();
+    }
+
 
 }

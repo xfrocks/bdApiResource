@@ -6,7 +6,12 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
     {
         $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
         if (!empty($resourceId)) {
-            return $this->responseReroute(__CLASS__, 'get-single');
+            return $this->responseReroute(__CLASS__, 'single');
+        }
+
+        $resourceIds = $this->_input->filterSingle('resource_ids', XenForo_Input::STRING);
+        if (!empty($resourceIds)) {
+            return $this->responseReroute(__CLASS__, 'multiple');
         }
 
         $pageNavParams = array();
@@ -131,7 +136,7 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         return $this->responseData('bdApiResource_ViewApi_Resource_List', $data);
     }
 
-    public function actionGetSingle()
+    public function actionSingle()
     {
         $resourceId = $this->_input->filterSingle('resource_id', XenForo_Input::UINT);
 
@@ -151,6 +156,38 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         );
 
         return $this->responseData('bdApi_ViewApi_Resource_Single', $data);
+    }
+
+    public function actionMultiple()
+    {
+        $resourceIdsInput = $this->_input->filterSingle('resource_ids', XenForo_Input::STRING);
+        $resourceIds = array_map('intval', explode(',', $resourceIdsInput));
+        if (empty($resourceIds)) {
+            return $this->responseNoPermission();
+        }
+
+        $fetchOptions = $this->_getResourceModel()->getFetchOptionsToPrepareApiData();
+        $resources = $this->_getResourceModel()->getResourcesByIds($resourceIds, $fetchOptions);
+
+        $categoryIds = array();
+        $categories = array();
+        foreach ($resources as $resource) {
+            $categoryIds[] = $resource['resource_category_id'];
+        }
+        if (!empty($categoryIds)) {
+            $categoryIds = array_unique(array_map('intval', $categoryIds));
+            $categories = $this->_getCategoryModel()->getCategoriesByIds($categoryIds);
+        }
+
+        $data = $this->_prepareResources($resources, $categories, array(
+            'includeCategory' => true,
+        ));
+
+        $data = array(
+            'resources' => $this->_filterDataMany($data),
+        );
+
+        return $this->responseData('bdApi_ViewApi_Resource_Multiple', $data);
     }
 
     public function actionPostIndex()
@@ -280,7 +317,7 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
         $resource = $dw->getMergedData();
 
         $this->_request->setParam('resource_id', $resource['resource_id']);
-        return $this->responseReroute(__CLASS__, 'get-single');
+        return $this->responseReroute(__CLASS__, 'single');
     }
 
     protected function actionPutIndex()
@@ -439,7 +476,7 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
             'reason' => __METHOD__,
         )));
 
-        return $this->responseReroute(__CLASS__, 'get-single');
+        return $this->responseReroute(__CLASS__, 'single');
     }
 
     public function actionDeleteIndex()
@@ -938,6 +975,10 @@ class bdApiResource_ControllerApi_Resource extends bdApi_ControllerApi_Abstract
                 continue;
             }
             $categoryRef =& $categories[$resource['resource_category_id']];
+
+            if (!$this->_getResourceModel()->canViewResource($resource, $categoryRef)) {
+                continue;
+            }
 
             $resourceData = $this->_getResourceModel()->prepareApiDataForResource($resource, $categoryRef);
 
