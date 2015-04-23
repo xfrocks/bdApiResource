@@ -4,11 +4,10 @@ class bdApiResource_Listener
 {
     public static function load_class($class, array &$extend)
     {
-        if (strpos($class, '_ControllerApi_Index')) {
-            $extend[] = 'bdApiResource_ControllerApi_Index';
-        }
-
         static $classes = array(
+            'bdApi_ControllerApi_Index',
+            'bdApi_ControllerApi_Search',
+
             'XenForo_Model_Search',
 
             'XenResource_DataWriter_Resource',

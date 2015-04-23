@@ -1,6 +1,6 @@
 <?php
 
-class bdApiResource_ControllerApi_Index extends XFCP_bdApiResource_ControllerApi_Index
+class bdApiResource_bdApi_ControllerApi_Index extends XFCP_bdApiResource_bdApi_ControllerApi_Index
 {
     public function actionGetIndex()
     {
@@ -17,7 +17,7 @@ class bdApiResource_ControllerApi_Index extends XFCP_bdApiResource_ControllerApi
     protected function _getModules()
     {
         $modules = parent::_getModules();
-        $modules['resource'] = 2015032401;
+        $modules['resource'] = 2015042301;
 
         return $modules;
     }
