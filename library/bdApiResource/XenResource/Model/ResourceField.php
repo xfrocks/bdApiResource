@@ -21,6 +21,7 @@ class bdApiResource_XenResource_Model_ResourceField extends XFCP_bdApiResource_X
         $publicKeys = array(
             'title' => 'title',
             'description' => 'description',
+            'display_group' => 'display_group',
         );
         if (!empty($field['isChoice'])) {
             $publicKeys['fieldChoices'] = 'choices';
