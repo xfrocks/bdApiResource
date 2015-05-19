@@ -40,9 +40,20 @@ class bdApiResource_XenForo_Model_Search extends XFCP_bdApiResource_XenForo_Mode
             $dataJobParams = array();
             $dataJobParams['resource_ids'] = implode(',', array_keys($resourceIds));
             $dataJob = Appforo_Data_Helper_Batch::doJob('GET', 'resources', $dataJobParams);
+            $resources = null;
 
             if (isset($dataJob['resources'])) {
-                foreach ($dataJob['resources'] as $resource) {
+                // legacy support
+                $resources =& $dataJob['resources'];
+            } elseif (isset($dataJob['_job_response'])
+                && !empty($dataJob['_job_response']->params['resources'])
+            ) {
+                // new version of batch api
+                $resources =& $dataJob['_job_response']->params['resources'];
+            }
+
+            if ($resources !== null) {
+                foreach ($resources as $resource) {
                     if (empty($resource['resource_id'])
                         || !isset($resourceIds[$resource['resource_id']])
                     ) {
